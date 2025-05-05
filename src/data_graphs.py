@@ -40,7 +40,7 @@ def load_tree_data(tree_file_path='Tree.xlsx', sheet_name='TreeI', header_row=0)
     
 
 def create_tree_height_violin(df, height_col='Height_m', status_col='Status', 
-                              colors={'Intact': 'green', 'Degraded': 'brown'}):
+                              colors={'Intact': '#358600', 'Degraded': '#C08552'}):
     """
     Create an interactive violin plot comparing tree heights by status using Plotly.
     
@@ -102,7 +102,7 @@ def create_tree_height_violin(df, height_col='Height_m', status_col='Status',
         yaxis_title="<b>Height (meters)</b>",
         xaxis_title="<b>Forest Condition</b>",
         violingap=0.2,  # Gap between violins
-        violinmode='overlay',  # 'overlay' for semi-transparent violins
+          # 'overlay' for semi-transparent violins
          
     )
     
