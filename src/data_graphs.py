@@ -1263,243 +1263,229 @@ def create_plotly_waffle_chart(birds_df):
         return None
     
 
-df = pd.read_csv('birds_entact.csv')
-# standardize date format
-def standardize_date_format(date_str):
-    day, month, year = date_str.split('/')
-    return f"{int(day)}/{int(month)}/{year}"
 
-# Apply function to df
-df['Date'] = df['Date'].apply(standardize_date_format)
-# drop columns
-df = df.drop(['ID', 'Date', 'IUCN_Status'], axis=1)
-# convert Time_Stamp to datetime
-df['Time_Stamp'] = pd.to_datetime(df['Time_Stamp'], format='%H:%M:%S', errors='coerce')
+def create_bird_arrival_duration_plot(df_birds):
+    """
+    Creates a scatter plot showing mean bird arrival time vs. mean duration,
+    grouping birds by proximity in time and duration.
 
-# time to seconds
-df['Time_Seconds'] = df['Time_Stamp'].dt.hour * 3600 + df['Time_Stamp'].dt.minute * 60 + df['Time_Stamp'].dt.second
+    Args:
+        df_birds (pd.DataFrame): DataFrame containing bird sighting data with
+                                 'Latin_Name', 'Date', 'Time_Stamp', 'Duration_sec'.
 
-# round Duration to nearest second
-df['Duration_sec'] = df['Duration_sec'].round().astype(int)
+    Returns:
+        matplotlib.figure.Figure: The Matplotlib figure object containing the plot,
+                                  or None if an error occurs.
+    """
+    try:
+        df = df_birds.copy() # Work on a copy
 
-# group by Latin_Name and calculate mean
-summary_df = df.groupby('Latin_Name').agg({
-    'Time_Seconds': 'mean',
-    'Duration_sec': 'mean'
-}).reset_index()
+        # --- Data Preprocessing ---
+        # Standardize date format (assuming input format is 'd/m/yyyy')
+        def standardize_date_format(date_str):
+            try:
+                # Handle potential non-string or incorrectly formatted dates
+                if not isinstance(date_str, str) or '/' not in date_str:
+                    return pd.NaT # Return Not a Time for invalid formats
+                day, month, year = date_str.split('/')
+                # Pad day and month if necessary (though int() handles it)
+                return f"{int(day):02d}/{int(month):02d}/{year}"
+            except Exception:
+                return pd.NaT # Return NaT on any parsing error
 
-# Convert seconds to rounded-up
-def seconds_to_time_rounded_up(seconds):
-    seconds = int(math.ceil(seconds / 60.0)) * 60  # round up to full minute
-    time = timedelta(seconds=seconds)
-    hours, remainder = divmod(time.seconds, 3600)
-    minutes = remainder // 60
-    return f"{hours:02d}:{minutes:02d}"
+        if 'Date' in df.columns:
+            df['Date'] = df['Date'].apply(standardize_date_format)
+            df['Date'] = pd.to_datetime(df['Date'], format='%d/%m/%Y', errors='coerce') # Convert to datetime
 
-summary_df['Mean_Time_Stamp'] = summary_df['Time_Seconds'].apply(seconds_to_time_rounded_up)
+        # Convert Time_Stamp to datetime, handling potential errors
+        if 'Time_Stamp' in df.columns:
+            df['Time_Stamp'] = pd.to_datetime(df['Time_Stamp'], format='%H:%M:%S', errors='coerce')
+        else:
+            print("Error: 'Time_Stamp' column not found.")
+            return None
 
-# Round duration mean to whole seconds
-summary_df['Mean_Duration_sec'] = summary_df['Duration_sec'].round().astype(int)
+        # Calculate Time_Seconds, handling NaT from previous step
+        df['Time_Seconds'] = df['Time_Stamp'].dt.hour * 3600 + df['Time_Stamp'].dt.minute * 60 + df['Time_Stamp'].dt.second
+        df['Time_Seconds'] = df['Time_Seconds'].fillna(-1).astype(int) # Fill NaT times with -1 or handle appropriately
 
-# Drop intermediate
-summary_df = summary_df.drop(columns=['Time_Seconds', 'Duration_sec'])
+        # Round Duration to nearest second
+        if 'Duration_sec' in df.columns:
+            df['Duration_sec'] = pd.to_numeric(df['Duration_sec'], errors='coerce').round().fillna(-1).astype(int) # Handle non-numeric/NaN
+        else:
+            print("Error: 'Duration_sec' column not found.")
+            return None
 
+        # Drop rows where essential time/duration info is missing
+        df = df[(df['Time_Seconds'] >= 0) & (df['Duration_sec'] >= 0)].copy()
+        if df.empty:
+            print("Error: No valid data after cleaning Time_Stamp and Duration_sec.")
+            return None
 
-# Convert Time_Stamp to datetime if not already
-df['Time_Stamp'] = pd.to_datetime(df['Time_Stamp'], format='%H:%M:%S', errors='coerce')
+        # --- Grouping Logic ---
+        time_tolerance_seconds = 3 * 60
+        duration_tolerance_seconds = 5
 
-# Convert time to seconds
-df['Time_Seconds'] = df['Time_Stamp'].dt.hour * 3600 + df['Time_Stamp'].dt.minute * 60 + df['Time_Stamp'].dt.second
+        # Function to assign IDs based on time and duration proximity
+        def assign_ids(df_to_process, time_tolerance, duration_tolerance):
+            df_to_process = df_to_process.sort_values(by='Time_Seconds').reset_index(drop=True) # Sort for efficiency
+            df_to_process['ID'] = -1 # Initialize with -1 instead of None for easier type handling
+            next_id = 1
+            processed = [False] * len(df_to_process)
 
-# Round Duration to nearest second
-df['Duration_sec'] = df['Duration_sec'].round().astype(int)
+            for i in range(len(df_to_process)):
+                if not processed[i]:
+                    current_id = next_id
+                    df_to_process.loc[i, 'ID'] = current_id
+                    processed[i] = True
+                    time_i = df_to_process.loc[i, 'Time_Seconds']
+                    duration_i = df_to_process.loc[i, 'Duration_sec']
 
-# Define the tolerance windows
-time_tolerance_seconds = 3 * 60
-duration_tolerance_seconds = 5
+                    # Look for neighbors within the tolerance window
+                    for j in range(i + 1, len(df_to_process)):
+                        if not processed[j]:
+                            time_j = df_to_process.loc[j, 'Time_Seconds']
+                            duration_j = df_to_process.loc[j, 'Duration_sec']
 
-# Function to assign IDs based on time and duration proximity
-def assign_ids(df, time_tolerance, duration_tolerance):
-    df['ID'] = None
-    next_id = 1
-    processed = [False] * len(df)
+                            # Optimization: If time_j is already too far, break inner loop
+                            if time_j - time_i > time_tolerance:
+                                break
 
-    for i in range(len(df)):
-        if not processed[i]:
-            df.loc[i, 'ID'] = next_id
-            processed[i] = True
-            time_i = df.loc[i, 'Time_Seconds']
-            duration_i = df.loc[i, 'Duration_sec']
+                            if (abs(time_i - time_j) <= time_tolerance) and \
+                               (abs(duration_i - duration_j) <= duration_tolerance):
+                                df_to_process.loc[j, 'ID'] = current_id
+                                processed[j] = True
+                    next_id += 1
+            return df_to_process
 
-            for j in range(i + 1, len(df)):
-                if not processed[j]:
-                    time_j = df.loc[j, 'Time_Seconds']
-                    duration_j = df.loc[j, 'Duration_sec']
+        # Apply the ID assignment function
+        df = assign_ids(df, time_tolerance_seconds, duration_tolerance_seconds)
 
-                    if (abs(time_i - time_j) <= time_tolerance) and (abs(duration_i - duration_j) <= duration_tolerance):
-                        df.loc[j, 'ID'] = next_id
-                        processed[j] = True
-            next_id += 1
-    return df
+        # --- Summarization ---
+        # Group by Latin_Name and calculate mean, keeping the first assigned ID
+        if 'Latin_Name' not in df.columns:
+            print("Error: 'Latin_Name' column not found.")
+            return None
 
-# Apply the ID assignment function
-df = assign_ids(df.copy(), time_tolerance_seconds, duration_tolerance_seconds)
+        summary_df = df.groupby('Latin_Name').agg(
+            Time_Seconds=('Time_Seconds', 'mean'),
+            Duration_sec=('Duration_sec', 'mean'),
+            ID=('ID', 'first')  # Keep the first assigned ID for the group
+        ).reset_index()
 
-# Group by Latin_Name and calculate mean
-summary_df = df.groupby('Latin_Name').agg({
-    'Time_Seconds': 'mean',
-    'Duration_sec': 'mean',
-    'ID': 'first'  # Keep the first assigned ID for the group
-}).reset_index()
+        # Convert mean seconds back to rounded-up HH:MM format for display (optional here, done later for axis)
+        def seconds_to_time_rounded_up(seconds):
+            if pd.isna(seconds): return "00:00"
+            seconds = int(math.ceil(seconds / 60.0)) * 60  # round up to full minute
+            time = timedelta(seconds=seconds)
+            hours, remainder = divmod(time.seconds, 3600)
+            minutes = remainder // 60
+            return f"{hours:02d}:{minutes:02d}"
 
-# Convert seconds to rounded-up HH:MM
-def seconds_to_time_rounded_up(seconds):
-    seconds = int(math.ceil(seconds / 60.0)) * 60  # round up to full minute
-    time = timedelta(seconds=seconds)
-    hours, remainder = divmod(time.seconds, 3600)
-    minutes = remainder // 60
-    return f"{hours:02d}:{minutes:02d}"
+        # summary_df['Mean_Time_Stamp'] = summary_df['Time_Seconds'].apply(seconds_to_time_rounded_up) # Not strictly needed for plot coords
+        summary_df['Mean_Duration_sec'] = summary_df['Duration_sec'].round().astype(int)
+        summary_df['Mean_Time_Seconds'] = summary_df['Time_Seconds'] # Keep mean seconds for plotting
 
-summary_df['Mean_Time_Stamp'] = summary_df['Time_Seconds'].apply(seconds_to_time_rounded_up)
+        # --- Filtering for Groups with Multiple Species ---
+        id_counts = summary_df['ID'].value_counts()
+        unique_ids = id_counts[id_counts == 1].index.tolist() # IDs that appear only once
+        filtered_summary_df = summary_df[~summary_df['ID'].isin(unique_ids)] # Keep only IDs with >1 species
 
-# Round duration mean to whole seconds
-summary_df['Mean_Duration_sec'] = summary_df['Duration_sec'].round().astype(int)
+        if filtered_summary_df.empty:
+            print("Warning: No groups found with more than one species after filtering.")
+            # Decide if you want to plot single-species groups or return None
+            # Plotting single species groups might be messy. Returning None for now.
+            return None
 
-# Drop intermediate columns
-summary_df = summary_df.drop(columns=['Time_Seconds', 'Duration_sec'])
-# tolerance definition
-time_tolerance_seconds = 3 * 60
-duration_tolerance_seconds = 5
+        # --- Grouping by ID for Plotting ---
+        grouped_df = (
+            filtered_summary_df.groupby('ID')
+            .agg(
+                Mean_Time_Seconds=('Mean_Time_Seconds', 'mean'),
+                Mean_Duration_sec=('Mean_Duration_sec', 'mean'),
+                Latin_Names=('Latin_Name', list),
+            )
+            .reset_index()
+        )
 
-# create function to assign IDs based on time and duration 
-def assign_ids(df, time_tolerance, duration_tolerance):
-    df['ID'] = None
-    next_id = 1
-    processed = [False] * len(df)
+        # --- Plotting ---
+        plt.figure(figsize=(14, 8)) # Adjusted figure size
+        sns.scatterplot(
+            data=grouped_df,
+            x='Mean_Time_Seconds',
+            y='Mean_Duration_sec',
+            hue='ID',
+            palette='tab20', # Using a palette suitable for many categories
+            s=200,          # Increased size slightly
+            alpha=0.8,
+            legend=False    # No legend needed as text labels are added
+        )
 
-    for i in range(len(df)):
-        if not processed[i]:
-            df.loc[i, 'ID'] = next_id
-            processed[i] = True
-            time_i = df.loc[i, 'Time_Seconds']
-            duration_i = df.loc[i, 'Duration_sec']
+        # Add text labels for species within each group
+        for index, row in grouped_df.iterrows():
+            species_text = '\n'.join(row['Latin_Names'])
+            plt.text(
+                row['Mean_Time_Seconds'],
+                row['Mean_Duration_sec'],
+                species_text,
+                ha='center',
+                va='center', # Adjust vertical alignment if needed
+                color='black',
+                fontsize=9, # Adjusted fontsize
+                bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.6, ec='none') # Add background to text
+            )
 
-            for j in range(i + 1, len(df)):
-                if not processed[j]:
-                    time_j = df.loc[j, 'Time_Seconds']
-                    duration_j = df.loc[j, 'Duration_sec']
+        # Format x-axis ticks as HH:MM
+        def format_time_ticks(seconds, pos=None): # pos argument needed for FuncFormatter
+            """Formats seconds since midnight to HH:MM."""
+            if seconds < 0: return "" # Avoid formatting negative ticks if axis extends
+            hours = int(seconds // 3600)
+            minutes = int((seconds % 3600) // 60)
+            return f"{hours:02d}:{minutes:02d}"
 
-                    if (abs(time_i - time_j) <= time_tolerance) and (abs(duration_i - duration_j) <= duration_tolerance):
-                        df.loc[j, 'ID'] = next_id
-                        processed[j] = True
-            next_id += 1
-    return df
+        # Use FuncFormatter for better control over tick labels
+        from matplotlib.ticker import FuncFormatter
+        ax = plt.gca() # Get current axes
+        ax.xaxis.set_major_formatter(FuncFormatter(format_time_ticks))
 
-# Apply the function
-df = assign_ids(df.copy(), time_tolerance_seconds, duration_tolerance_seconds)
+        plt.xlabel('Mean Arrival Time (HH:MM)')
+        plt.ylabel('Mean Duration (seconds)')
+        plt.title('Bird Species Groups by Arrival Time and Call Duration')
+        plt.grid(True, linestyle='--', alpha=0.6)
 
-# Group by Latin_Name and calculate mean
-# keep first assigend ID for the group
-summary_df = df.groupby('Latin_Name').agg({
-    'Time_Seconds': 'mean',
-    'Duration_sec': 'mean',
-    'ID': 'first'
-}).reset_index()
+        plt.tight_layout() # Adjust layout
 
-# Convert seconds to rounded-up HH:MM
-# and round up to full minute
-def seconds_to_time_rounded_up(seconds):
-    seconds = int(math.ceil(seconds / 60.0)) * 60
-    time = timedelta(seconds=seconds)
-    hours, remainder = divmod(time.seconds, 3600)
-    minutes = remainder // 60
-    return f"{hours:02d}:{minutes:02d}"
+        # Return the Matplotlib figure object
+        fig = plt.gcf()
+        # Do NOT call plt.show() here
+        return fig
 
-summary_df['Mean_Time_Stamp'] = summary_df['Time_Seconds'].apply(seconds_to_time_rounded_up)
+    except Exception as e:
+        print(f"An error occurred in create_bird_arrival_duration_plot: {e}")
+        # Optionally close the figure if created during error
+        try:
+            plt.close()
+        except:
+            pass # Ignore if no figure exists
+        return None
 
-# Round duration mean to whole seconds
-summary_df['Mean_Duration_sec'] = summary_df['Duration_sec'].round().astype(int)
-
-# Drop intermediate columns
-summary_df = summary_df.drop(columns=['Time_Seconds', 'Duration_sec'])
-# Count the occurrences of each ID
-id_counts = summary_df['ID'].value_counts()
-
-# source IDs that appear only once
-unique_ids = id_counts[id_counts == 1].index.tolist()
-
-# Drop rows where the ID is in the list of unique IDs
-filtered_summary_df = summary_df[~summary_df['ID'].isin(unique_ids)]
-
-
-# converting Mean_Time_Stamp to numeric (seconds since midnight)
-def time_to_seconds(time_str):
-    """Converts HH:MM time string to seconds since midnight."""
-    hours, minutes = map(int, time_str.split(':'))
-    return hours * 3600 + minutes * 60
-
-filtered_summary_df['Time_Seconds'] = filtered_summary_df['Mean_Time_Stamp'].apply(
-    time_to_seconds
-)
-
-# grouping DataFrame by 'ID'
-grouped_df = (
-    filtered_summary_df.groupby('ID')
-    .agg(
-        Mean_Time_Seconds=('Time_Seconds', 'mean'),
-        Mean_Duration_sec=('Mean_Duration_sec', 'mean'),
-        Latin_Names=('Latin_Name', list),
-    )
-    .reset_index()
-)
-
-
-# creating the scatter plot
-plt.figure(figsize=(12, 6))
-sns.scatterplot(
-    data=grouped_df,
-    x='Mean_Time_Seconds',
-    y='Mean_Duration_sec',
-    hue='ID',
-    palette='tab20',
-    size=1000, 
-    alpha=0.8,
-    legend=False
-)
-
-for index, row in grouped_df.iterrows():
-    species_text = '\n'.join(row['Latin_Names'])
-    plt.text(
-        row['Mean_Time_Seconds'],
-        row['Mean_Duration_sec'],
-        species_text,
-        ha='center',
-        va='center',
-        color='black',
-        fontsize=12,
-    )
-
-
-# x-axis time
-def format_time_ticks(seconds):
-    """Formats seconds since midnight to HH:MM."""
-    hours = seconds // 3600
-    minutes = (seconds % 3600) // 60
-    return f"{int(hours):02d}:{int(minutes):02d}"
-
-
-plt.xticks(
-    ticks=plt.xticks()[0],  # Get the current tick locations
-    labels=[
-        format_time_ticks(x) for x in plt.xticks()[0]
-    ],  
-) 
-
-plt.xlabel('Mean Arrival Time (HH:MM)')
-plt.ylabel('Mean Duration (seconds)')
-plt.title('Bird Arrival Time and Duration by Group')
-plt.grid(True)
-
-
-plt.tight_layout()  # Adjust layout to prevent labels from overlapping
-plt.show()
+# --- Example Usage (keep commented out or remove from final script) ---
+# if __name__ == '__main__':
+#     # Load your data
+#     try:
+#         df_birds_data = pd.read_csv('birds_entact.csv')
+#         print("Data loaded successfully.")
+#
+#         # Create the plot
+#         bird_arrival_fig = create_bird_arrival_duration_plot(df_birds_data)
+#
+#         # In a real script, you wouldn't show it here, but for testing:
+#         if bird_arrival_fig:
+#             print("Figure created. Displaying for testing...")
+#             plt.show()
+#         else:
+#             print("Figure creation failed.")
+#
+#     except FileNotFoundError:
+#         print("Error: birds_entact.csv not found.")
+#     except Exception as main_e:
+#         print(f"An error occurred during example usage: {main_e}")
