@@ -131,7 +131,7 @@ import plotly.graph_objects as go # Make sure go is imported
 # ... other imports ...
 
 def create_tree_height_histogram(df, height_col='Height_m', status_col='Status',
-                                colors={'Intact': '#2e8b57', 'Degraded': '#8b4513'}
+                                colors={'Intact': '#358600', 'Degraded': '#C08552'}
                                 ):
     """
     Create an interactive overlaid histogram comparing tree heights by status using Plotly (raw counts).
@@ -727,8 +727,8 @@ def create_bird_conservation_plot(df, iucn_col='IUCN_Status', status_col='Status
     # Define vibrant colors if not provided
     if colors is None:
         colors = {
-            'Intact': '#20B2AA',  # Bright green
-            'Degraded': '#CD5C5C'  # Vibrant orange/red
+            'Intact': '#358600',  # Bright green
+            'Degraded': '#C08552'  # Vibrant orange/red
         }
     
     # Create the figure
@@ -807,14 +807,16 @@ def create_bird_conservation_plot(df, iucn_col='IUCN_Status', status_col='Status
     
     return fig
 
+# ...existing code...
 
-def create_tree_mass_comparison(df, common_name_col='Common_Name', height_col='Height_m', 
+def create_tree_volume_comparison(df, common_name_col='Common_Name', height_col='Height_m', 
                                diameter_col='Diameter_cm', status_col='Status', 
-                               density_col='Density', default_wood_density=0.6, top_n=15):
+                               top_n=15):
     """
-    Create interactive treemaps comparing tree species mass between intact and degraded areas,
-    using species-specific wood density values when available.
-    
+    Create interactive treemaps comparing tree species volume between intact and degraded areas.
+    The relative size of the subplot areas is fixed, but the rectangles within each treemap
+    are proportional to the volume of the species within that area.
+
     Parameters:
     -----------
     df : pandas.DataFrame
@@ -827,19 +829,14 @@ def create_tree_mass_comparison(df, common_name_col='Common_Name', height_col='H
         Column name for tree diameter in centimeters
     status_col : str
         Column name for tree status (Intact/Degraded)
-    density_col : str
-        Column name for wood density in g/cm³
-    default_wood_density : float
-        Default wood density value in g/cm³ to use when species-specific values are not available
     top_n : int
         Number of top species to display in each treemap
-        
+
     Returns:
     --------
     dict
         Dictionary containing the Plotly figure, summary statistics, and top species data
     """
-    
     
     # Check if we have the required columns
     required_cols = [common_name_col, height_col, diameter_col, status_col]
@@ -850,7 +847,6 @@ def create_tree_mass_comparison(df, common_name_col='Common_Name', height_col='H
         "statistics": {},
         "top_species": {"intact": [], "degraded": []},
         "error": None,
-        "density_used": "species-specific" if density_col in df.columns else "default"
     }
     
     if missing_cols:
@@ -865,67 +861,59 @@ def create_tree_mass_comparison(df, common_name_col='Common_Name', height_col='H
         df_trees[height_col] = pd.to_numeric(df_trees[height_col], errors='coerce')
         df_trees[diameter_col] = pd.to_numeric(df_trees[diameter_col], errors='coerce')
         
-        # Check if wood density column exists and convert to numeric
-        has_density_col = density_col in df_trees.columns
-        if has_density_col:
-            df_trees[density_col] = pd.to_numeric(df_trees[density_col], errors='coerce')
-            # Create a mapping of common names to their average wood density
-            density_map = df_trees.groupby(common_name_col)[density_col].mean().to_dict()
-            # For missing values, use species average or default
-            df_trees[density_col] = df_trees.apply(
-                lambda row: row[density_col] if pd.notnull(row[density_col]) 
-                else density_map.get(row[common_name_col], default_wood_density), 
-                axis=1
-            )
-        
         # Drop rows with missing values in key columns
         df_trees = df_trees.dropna(subset=[common_name_col, height_col, diameter_col, status_col])
         
         # Fill any missing Common_Name values with 'Unknown'
         df_trees[common_name_col] = df_trees[common_name_col].fillna('Unknown')
         
-        # Calculate tree mass with species-specific wood density when available
-        if has_density_col:
-            # Mass ≈ π × (diameter/2)² × height × specific wood density
-            df_trees['Mass_kg'] = (np.pi * ((df_trees[diameter_col]/2)**2) * 
-                                  df_trees[height_col] * df_trees[density_col]) / 1000  # Convert g to kg
-            result["density_used"] = "species-specific"
-        else:
-            # Use default wood density
-            df_trees['Mass_kg'] = (np.pi * ((df_trees[diameter_col]/2)**2) * 
-                                  df_trees[height_col] * default_wood_density) / 1000  # Convert g to kg
-            result["density_used"] = "default"
+        # Calculate tree volume (approximated as a cylinder)
+        # Volume = π * (radius_m)² * height_m
+        # Radius_m = (diameter_cm / 100) / 2
+        df_trees['Volume_m3'] = (np.pi * ((df_trees[diameter_col] / 100 / 2)**2) * 
+                                  df_trees[height_col])
         
         # Filter for valid statuses
         valid_statuses = ['Intact', 'Degraded']
         df_trees = df_trees[df_trees[status_col].isin(valid_statuses)]
         
-        # Group by species and status to get total mass and average density
-        if has_density_col:
-            mass_by_species = df_trees.groupby([common_name_col, status_col]).agg({
-                'Mass_kg': 'sum',
-                density_col: 'mean'
-            }).reset_index()
-        else:
-            mass_by_species = df_trees.groupby([common_name_col, status_col])['Mass_kg'].sum().reset_index()
+        # Group by species and status to get total volume
+        volume_by_species = df_trees.groupby([common_name_col, status_col])['Volume_m3'].sum().reset_index()
         
         # Create separate dataframes for intact and degraded
-        intact_df = mass_by_species[mass_by_species[status_col] == 'Intact']
-        degraded_df = mass_by_species[mass_by_species[status_col] == 'Degraded']
+        intact_df = volume_by_species[volume_by_species[status_col] == 'Intact']
+        degraded_df = volume_by_species[volume_by_species[status_col] == 'Degraded']
         
-        # Sort by mass and limit to top N species for readability
-        intact_df = intact_df.sort_values('Mass_kg', ascending=False).head(top_n)
-        degraded_df = degraded_df.sort_values('Mass_kg', ascending=False).head(top_n)
-        
+        # Sort by volume and limit to top N species for readability
+        intact_df = intact_df.sort_values('Volume_m3', ascending=False).head(top_n)
+        degraded_df = degraded_df.sort_values('Volume_m3', ascending=False).head(top_n)
+
+        # Calculate total volumes for potential proportional sizing (though not directly applied to subplot size)
+        total_intact_volume = intact_df['Volume_m3'].sum()
+        total_degraded_volume = degraded_df['Volume_m3'].sum()
+        grand_total_volume = total_intact_volume + total_degraded_volume
+
+        # Determine column widths - Note: This sets subplot area width, not data-driven treemap size.
+        # For true proportional visual size based on total volume, separate figures or different plot types might be needed.
+       
+        if grand_total_volume > 0:
+             intact_width = total_intact_volume / grand_total_volume
+             degraded_width = total_degraded_volume / grand_total_volume
+        else:
+             intact_width = 0.5
+             degraded_width = 0.5
+
         # Create a figure with two treemaps side by side
         fig = make_subplots(
             rows=1, cols=2,
-            column_widths=[1, 1],
+            column_widths=[intact_width, degraded_width], # Sets relative width of subplot areas
             subplot_titles=(
-                f'Tree Species Mass in Intact Areas (Top {len(intact_df)})',
-                f'Tree Species Mass in Degraded Areas (Top {len(degraded_df)})'
+                f'Tree Species Volume in Intact Areas (Top {len(intact_df)})',
+                f'Tree Species Volume in Degraded Areas (Top {len(degraded_df)})'
             ),
-            specs=[[{"type": "treemap"}, {"type": "treemap"}]]
+            specs=[[{"type": "treemap"}, {"type": "treemap"}]],
+            horizontal_spacing=0.000001,
+            
         )
         
         # Define color scales for the two treemaps
@@ -943,147 +931,150 @@ def create_tree_mass_comparison(df, common_name_col='Common_Name', height_col='H
         
         # Create treemap for intact trees if data exists
         if not intact_df.empty:
-            # Format hover text with density info if available
-            if has_density_col:
-                intact_df['text'] = intact_df.apply(lambda row: 
-                    f"{row[common_name_col]}<br>Mass: {row['Mass_kg']:.1f} kg<br>Density: {row[density_col]:.2f} g/cm³", axis=1)
-            else:
-                intact_df['text'] = intact_df.apply(lambda row: 
-                    f"{row[common_name_col]}<br>Mass: {row['Mass_kg']:.1f} kg", axis=1)
+            # Format hover text
+            intact_df['text'] = intact_df.apply(lambda row: 
+                    f"{row[common_name_col]}<br>Volume: {row['Volume_m3']:.2f} m³", axis=1)
             
-            # Calculate percentages of total mass for labeling
-            total_intact_mass = intact_df['Mass_kg'].sum()
-            intact_df['percent'] = (intact_df['Mass_kg'] / total_intact_mass * 100).round(1)
+            # Calculate percentages of total volume for labeling
+            intact_df['percent'] = (intact_df['Volume_m3'] / total_intact_volume * 100).round(1)
             
             # Add treemap trace for intact trees
             fig.add_trace(go.Treemap(
                 labels=intact_df[common_name_col],
-                values=intact_df['Mass_kg'],
+                values=intact_df['Volume_m3'],
                 parents=[""] * len(intact_df),
+                root_color="lightblue",
                 text=intact_df['text'],
-                hovertemplate='<b>%{label}</b><br>Mass: %{value:.1f} kg<br>Percentage: %{percentRoot:.1f}%<extra></extra>',
+                hovertemplate='<b>%{label}</b><br>Volume: %{value:.2f} m³<br>Percentage: %{percentRoot:.1f}%<extra></extra>',
                 texttemplate='<b>%{label}</b><br>',
                 marker=dict(
                     colorscale=intact_colorscale,
-                    colors=intact_df['Mass_kg'],
-                    line=dict(width=1, color='white')
+                    colors=intact_df['Volume_m3'],
+                    line=dict(width=3, color='white'),
+                    
                 ),
+                
                 branchvalues='total',
                 textposition="middle center",
-                name="Intact"
+                name="Intact",
+                tiling=dict(pad=0)
             ), row=1, col=1)
         
         # Create treemap for degraded trees if data exists
         if not degraded_df.empty:
-            # Format hover text with density info if available
-            if has_density_col:
-                degraded_df['text'] = degraded_df.apply(lambda row: 
-                    f"{row[common_name_col]}<br>Mass: {row['Mass_kg']:.1f} kg<br>Density: {row[density_col]:.2f} g/cm³", axis=1)
-            else:
-                degraded_df['text'] = degraded_df.apply(lambda row: 
-                    f"{row[common_name_col]}<br>Mass: {row['Mass_kg']:.1f} kg", axis=1)
+            # Format hover text
+            degraded_df['text'] = degraded_df.apply(lambda row: 
+                    f"{row[common_name_col]}<br>Volume: {row['Volume_m3']:.2f} m³", axis=1)
             
-            # Calculate percentages of total mass for labeling
-            total_degraded_mass = degraded_df['Mass_kg'].sum()
-            degraded_df['percent'] = (degraded_df['Mass_kg'] / total_degraded_mass * 100).round(1)
+            # Calculate percentages of total volume for labeling
+            degraded_df['percent'] = (degraded_df['Volume_m3'] / total_degraded_volume * 100).round(1)
             
             # Add treemap trace for degraded trees
             fig.add_trace(go.Treemap(
                 labels=degraded_df[common_name_col],
-                values=degraded_df['Mass_kg'],
+                values=degraded_df['Volume_m3'],
                 parents=[""] * len(degraded_df),
                 text=degraded_df['text'],
-                hovertemplate='<b>%{label}</b><br>Mass: %{value:.1f} kg<br>Percentage: %{percentRoot:.1f}%<extra></extra>',
+                hovertemplate='<b>%{label}</b><br>Volume: %{value:.2f} m³<br>Percentage: %{percentRoot:.1f}%<extra></extra>',
                 texttemplate='<b>%{label}</b><br>',
                 marker=dict(
                     colorscale=degraded_colorscale,
-                    colors=degraded_df['Mass_kg'],
-                    line=dict(width=1, color='white')
+                    colors=degraded_df['Volume_m3'],
+                    line=dict(width=3, color='white')
                 ),
                 branchvalues='total',
                 textposition="middle center",
-                name="Degraded"
+                name="Degraded",
+                tiling=dict(pad=0)
             ), row=1, col=2)
         
         # Calculate summary statistics
-        total_intact_mass = intact_df['Mass_kg'].sum() if not intact_df.empty else 0
-        total_degraded_mass = degraded_df['Mass_kg'].sum() if not degraded_df.empty else 0
+        # Recalculate totals based on the top_n species shown
+        total_intact_volume_top_n = intact_df['Volume_m3'].sum()
+        total_degraded_volume_top_n = degraded_df['Volume_m3'].sum()
         
-        # Calculate percent difference
-        if total_intact_mass > 0 and total_degraded_mass > 0:
-            pct_diff = ((total_intact_mass - total_degraded_mass) / 
-                       ((total_intact_mass + total_degraded_mass) / 2)) * 100
+        # Calculate percent difference using top N totals
+        if total_intact_volume_top_n > 0 and total_degraded_volume_top_n > 0:
+            pct_diff = ((total_intact_volume_top_n - total_degraded_volume_top_n) / 
+                       ((total_intact_volume_top_n + total_degraded_volume_top_n) / 2)) * 100
             pct_diff_abs = abs(pct_diff)
             diff_direction = 'higher in intact areas' if pct_diff > 0 else 'higher in degraded areas'
+            title_pct_diff = round(pct_diff_abs, 1)
+            title_direction = 'more' if pct_diff > 0 else 'less'
+            title_area = 'Intact areas' if pct_diff > 0 else 'Degraded areas'
+            title_color = 'green' if pct_diff > 0 else 'brown'
+
+        elif total_intact_volume_top_n > 0:
+             pct_diff_abs = 100
+             diff_direction = 'higher in intact areas'
+             title_pct_diff = 100
+             title_direction = 'more'
+             title_area = 'Intact areas'
+             title_color = 'green'
+        elif total_degraded_volume_top_n > 0:
+             pct_diff_abs = 100
+             diff_direction = 'higher in degraded areas'
+             title_pct_diff = 100
+             title_direction = 'more'
+             title_area = 'Degraded areas'
+             title_color = 'brown'
         else:
             pct_diff_abs = 0
             diff_direction = 'N/A'
-        
+            title_pct_diff = 0
+            title_direction = ''
+            title_area = 'areas'
+            title_color = 'black'
+
+
         # Prepare summary statistics for return
         result["statistics"] = {
-            "total_intact_mass": round(total_intact_mass, 1),
-            "total_degraded_mass": round(total_degraded_mass, 1),
-            "percent_difference": round(pct_diff_abs, 1) if total_intact_mass > 0 and total_degraded_mass > 0 else 0,
+            "total_intact_volume": round(total_intact_volume_top_n, 2),
+            "total_degraded_volume": round(total_degraded_volume_top_n, 2),
+            "percent_difference": round(pct_diff_abs, 1),
             "difference_direction": diff_direction
         }
         
-        # Get top 5 species for each area with density info if available
-        if has_density_col:
-            for i, row in intact_df.head(5).iterrows():
-                result["top_species"]["intact"].append({
-                    "name": row[common_name_col],
-                    "mass": round(row['Mass_kg'], 1),
-                    "density": round(row[density_col], 2)
-                })
-                
-            for i, row in degraded_df.head(5).iterrows():
-                result["top_species"]["degraded"].append({
-                    "name": row[common_name_col],
-                    "mass": round(row['Mass_kg'], 1),
-                    "density": round(row[density_col], 2)
-                })
-        else:
-            for i, row in intact_df.head(5).iterrows():
-                result["top_species"]["intact"].append({
-                    "name": row[common_name_col],
-                    "mass": round(row['Mass_kg'], 1)
-                })
-                
-            for i, row in degraded_df.head(5).iterrows():
-                result["top_species"]["degraded"].append({
-                    "name": row[common_name_col],
-                    "mass": round(row['Mass_kg'], 1)
-                })
+        # Get top 5 species for each area
+        for i, row in intact_df.head(5).iterrows():
+            result["top_species"]["intact"].append({
+                "name": row[common_name_col],
+                "volume": round(row['Volume_m3'], 2)
+            })
+            
+        for i, row in degraded_df.head(5).iterrows():
+            result["top_species"]["degraded"].append({
+                "name": row[common_name_col],
+                "volume": round(row['Volume_m3'], 2)
+            })
         
         # Update layout
-        density_note = "species-specific wood density values" if has_density_col else f"default wood density value of {default_wood_density} g/cm³"
-        
+        fig_title = f'There is {title_pct_diff}% {title_direction} tree volume in <span style="color:{title_color};">{title_area}</span>' if title_pct_diff > 0 else 'Tree Volume Comparison: Intact vs Degraded Areas'
+
         fig.update_layout(
             title={
-                'text': 'There is 47.6% more tree mass in <span style="color:green;">Intact areas</span>  ',
+                'text': fig_title,
                 'y': 0.95,
                 'x': 0.5,
                 'xanchor': 'center',
                 'yanchor': 'top',
                 'font': {'size': 24, 'color': '#333333', 'family': 'Arial, sans-serif'}
             },
-            margin=dict(t=100, l=10, r=10, b=25),
+            margin=dict(t=90, l=10, r=10, b=50), # Increased bottom margin for annotation
             height=700,
             font=dict(
                 family="Arial, sans-serif",
                 size=13,
                 color="#333333"
             ),
-            paper_bgcolor='rgba(240, 240, 240, 0.1)',
-            plot_bgcolor='rgba(240, 240, 240, 0.1)',
+            
             
             annotations=[
-                
                 dict(
-                    x=0.5, y=-0.05,
+                    x=0.5, y=-0.07, # Adjusted y position
                     xref='paper', yref='paper',
-                    text=f'Note: Tree mass calculated using formula: π × (diameter/2)² × height × wood density<br>' +
-                         f'Using {density_note}',
+                    text=f'Note: Tree volume calculated using formula: π × (diameter_cm/200)² × height_m<br>' +
+                         f'Showing top {top_n} species by volume in each area.',
                     showarrow=False,
                     font=dict(size=11, color='gray', style='italic'),
                     align='center'
@@ -1099,11 +1090,11 @@ def create_tree_mass_comparison(df, common_name_col='Common_Name', height_col='H
     except Exception as e:
         result["error"] = str(e)
         return result
+
+
     
 
-import pandas as pd
-import numpy as np
-import plotly.graph_objects as go
+
 
 def create_plotly_waffle_chart(birds_df):
     """
@@ -1167,7 +1158,7 @@ def create_plotly_waffle_chart(birds_df):
         y_coords = []
         status_labels = []
         colors = []
-        color_map = {'Intact': 'forestgreen', 'Degraded': '#D2B48C'}
+        color_map = {'Intact': '#358600', 'Degraded': '#C08552'}
 
         waffle_width = 10
         waffle_height = 10
@@ -1194,9 +1185,9 @@ def create_plotly_waffle_chart(birds_df):
             mode='markers',
             marker=dict(
                 color=colors,
-                size=46, # Adjust size as needed
+                size=48, # Adjust size as needed
                 symbol='square',
-                line=dict(width=4, color='black') # Grid lines via marker outline
+                line=dict(width=0.1, color='white') # Grid lines via marker outline
             ),
             
             showlegend=False # We will create a custom legend annotation

@@ -7,7 +7,7 @@ from src.data_graphs import (create_tree_height_violin,
                              create_bird_activity_heatmap,
                              create_bird_activity_polar,
                              create_bird_conservation_plot,
-                             create_tree_mass_comparison,
+                             create_tree_volume_comparison,
                              create_plotly_waffle_chart,
                              create_bird_arrival_duration_plot,
                              create_sankey_diagram,
@@ -137,7 +137,7 @@ with container:
         
         
         # Create the violin plot
-        result = create_tree_mass_comparison(df_trees)
+        result = create_tree_volume_comparison(df_trees)
 
         # Display the plot
         st.plotly_chart(result['figure'], use_container_width=True)
