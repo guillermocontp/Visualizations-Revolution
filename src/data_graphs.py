@@ -1491,59 +1491,324 @@ def create_bird_arrival_duration_plot(df_birds):
 #         print(f"An error occurred during example usage: {main_e}")
 
 
-#Sankey Diagram Code
+
+# the right side doesnt list in order(from least concern to critically endangered), but I dont know how to fix it
+
+
+
+# ... (previous functions) ...
+
+# Sankey Diagram Code
 import pandas as pd
 import plotly.graph_objects as go
 
-#You need to change the dataframe names
-entact_counts = birds_entact.groupby('IUCN_Status')['Common_Name'].nunique 
-degraded_counts = birds_degraded.groupby('IUCN_Status')['Common_Name'].nunique()
+# ... (imports and other functions) ...
 
-categories = ['Least Concern', 'Near Threatened', 'Vulnerable', 'Endangered', 'Critically Endangered']
+def create_sankey_diagram(df_birds, status_col='Status', iucn_col='IUCN_Status', name_col='Common_Name'):
+    """
+    Creates a Sankey diagram showing the flow of unique bird species counts
+    from Intact/Degraded status to IUCN conservation categories, using a single DataFrame.
 
-entact_counts_values = [entact_counts.loc[i] if i in entact_counts.index else 0 for i in categories]
-degraded_counts_values = [degraded_counts.loc[i] if i in degraded_counts.index else 0 for i in categories]
+    Args:
+        df_birds (pd.DataFrame): DataFrame containing bird data with Status, IUCN, and species name columns.
+        status_col (str): Column name for habitat status (e.g., 'Intact', 'Degraded'). Defaults to 'Status'.
+        iucn_col (str): Column name for IUCN status. Defaults to 'IUCN_Status'.
+        name_col (str): Column name for the bird species identifier (e.g., Common_Name). Defaults to 'Common_Name'.
 
-labels = ['Intact', 'Degraded'] + categories
+    Returns:
+        plotly.graph_objects.Figure: The Plotly figure object containing the Sankey diagram,
+                                     or None if an error occurs.
+    """
+    try:
+        # --- Input Validation ---
+        if not isinstance(df_birds, pd.DataFrame) or df_birds.empty:
+            print("Error: Invalid or empty DataFrame provided for 'df_birds'.")
+            return None
 
-source = ['Intact'] * len(categories) + ['Degraded'] * len(categories)
-target = categories * 2
-values = entact_counts_values + degraded_counts_values
+        required_cols = [status_col, iucn_col, name_col]
+        if not all(col in df_birds.columns for col in required_cols):
+            missing = [col for col in required_cols if col not in df_birds.columns]
+            print(f"Error: Missing columns in 'df_birds': {missing}")
+            return None
 
-node_colors = [
-    '#358600',  # Entact
-    '#C08552',  # Degraded 
-    '#60C659',  # Least Concern 
-    '#CCE226',  # Near Threatened
-    '#F9E814',  # Vulnerable
-    '#FC7F3F',  # Endangered
-    '#D81E05'  # Critically Endangered 
-]
+        # --- Data Preparation ---
+        # Work on a copy
+        df_processed = df_birds.copy()
+
+        # Fill NA in relevant columns
+        df_processed[status_col] = df_processed[status_col].fillna('Unknown_Status')
+        df_processed[iucn_col] = df_processed[iucn_col].fillna('Unknown_IUCN')
+
+        # Filter for 'Intact' and 'Degraded' statuses
+        birds_entact = df_processed[df_processed[status_col] == 'Intact']
+        birds_degraded = df_processed[df_processed[status_col] == 'Degraded']
+
+        if birds_entact.empty and birds_degraded.empty:
+             print("Error: No data found for 'Intact' or 'Degraded' status.")
+             return None
+
+        # --- Data Aggregation ---
+        entact_counts = birds_entact.groupby(iucn_col)[name_col].nunique()
+        degraded_counts = birds_degraded.groupby(iucn_col)[name_col].nunique()
+
+        # Define the order of IUCN categories
+        categories = ['Least Concern', 'Near Threatened', 'Vulnerable', 'Endangered', 'Critically Endangered', 'Unknown_IUCN']
+        present_categories_entact = entact_counts.index.unique().tolist()
+        present_categories_degraded = degraded_counts.index.unique().tolist()
+        all_present_categories = sorted(list(set(present_categories_entact + present_categories_degraded)),
+                                        key=lambda x: categories.index(x) if x in categories else 99)
+
+        entact_counts_values = [entact_counts.get(cat, 0) for cat in all_present_categories]
+        degraded_counts_values = [degraded_counts.get(cat, 0) for cat in all_present_categories]
+
+        # --- Sankey Configuration ---
+        display_categories = [cat.replace('Unknown_IUCN', 'Unknown') for cat in all_present_categories]
+        labels = ['Intact', 'Degraded'] + display_categories
+        # Make labels bold for Sankey node
+        bold_labels = [f"<b>{l}</b>" for l in labels]
+
+        label_indices = {label: i for i, label in enumerate(labels)}
+
+        source_indices = [label_indices['Intact']] * len(all_present_categories) + \
+                         [label_indices['Degraded']] * len(all_present_categories)
+        target_indices = [label_indices[cat] for cat in display_categories] * 2
+        values = entact_counts_values + degraded_counts_values
+
+        node_color_map = {
+            'Intact': '#358600',
+            'Degraded': '#C08552',
+            'Least Concern': '#60C659',
+            'Near Threatened': '#CCE226',
+            'Vulnerable': '#F9E814',
+            'Endangered': '#FC7F3F',
+            'Critically Endangered': '#D81E05',
+            'Unknown': '#CCCCCC'
+        }
+        node_colors = [node_color_map.get(label, '#888888') for label in labels]
+
+        link_colors_intact = 'rgba(53, 134, 0, 0.4)'
+        link_colors_degraded = 'rgba(192, 133, 82, 0.4)'
+        link_colors = [link_colors_intact] * len(all_present_categories) + \
+                      [link_colors_degraded] * len(all_present_categories)
+
+        non_zero_indices = [i for i, v in enumerate(values) if v > 0]
+        source_indices = [source_indices[i] for i in non_zero_indices]
+        target_indices = [target_indices[i] for i in non_zero_indices]
+        values = [values[i] for i in non_zero_indices]
+        link_colors = [link_colors[i] for i in non_zero_indices]
 
 
-link_colors = ['rgba(81, 210, 187, 0.7)'] * len(categories) + ['rgba(199, 242, 150, 0.7)'] * len(categories)
+        # --- Create Figure ---
+        fig = go.Figure(go.Sankey(
+            arrangement='snap',
+            node=dict(
+                pad=25,          # Increased padding further for vertical spacing
+                thickness=10,
+                line=dict(color="black", width=0.5),
+                label=bold_labels, # Use bold labels here
+                color=node_colors,
+                # Explicitly set label font color inside node if needed, though layout font should cover it
+                # label_font=dict(color="black", size=12)
+            ),
+            link=dict(
+                source=source_indices,
+                target=target_indices,
+                value=values,
+                color=link_colors,
+                hovertemplate='From %{source.label} to %{target.label}:<br><b>%{value}</b> unique species<extra></extra>'
+            )
+        ))
+
+        fig.update_layout(
+            title_text="<b>Distribution of Unique Bird Species by Conservation Status</b>",
+            font=dict( # Set default font properties for the layout
+                size=12,
+                color="black" # Set default text color to black
+            ),
+            height=800, # Increased height for more vertical length
+            margin=dict(t=50, b=50, l=50, r=50) # Adjust margins if needed
+        )
+
+        return fig
+
+    except Exception as e:
+        print(f"An error occurred while creating the Sankey diagram: {e}")
+        return None
 
 
-fig = go.Figure(go.Sankey(
-    node=dict(
-        pad=5,
-        thickness=50,
-        line=dict(color="black", width=0.5),
-        label=labels,
-        color=node_colors
-    ),
-    link=dict(
-        source=[labels.index(i) for i in source],
-        target=[labels.index(i) for i in target],
-        value=values,
-        color=link_colors
-    )
-))
+from plotly.colors import hex_to_rgb
 
-fig.update_layout(
-    title_text="Sankey Diagram: Bird Species Flow between Intact & Degraded Habitats",
-    font_size=12,
-    width=1000,
-    height=600   
-)
-# the right side doesnt list in order(from least concern to critically endangered), but I dont know how to fix it
+
+def create_sankey_diagram_reversed(df_birds, status_col='Status', iucn_col='IUCN_Status', name_col='Common_Name'):
+    """
+    Creates a Sankey diagram showing the flow of unique bird species counts
+    FROM IUCN conservation categories TO Intact/Degraded status, using a single DataFrame.
+    Includes a horizontal legend at the bottom for IUCN status colors. Nodes are unlabeled.
+
+    Args:
+        df_birds (pd.DataFrame): DataFrame containing bird data with Status, IUCN, and species name columns.
+        status_col (str): Column name for habitat status (e.g., 'Intact', 'Degraded'). Defaults to 'Status'.
+        iucn_col (str): Column name for IUCN status. Defaults to 'IUCN_Status'.
+        name_col (str): Column name for the bird species identifier (e.g., Common_Name). Defaults to 'Common_Name'.
+
+    Returns:
+        plotly.graph_objects.Figure: The Plotly figure object containing the Sankey diagram,
+                                     or None if an error occurs.
+    """
+    try:
+        # --- Input Validation ---
+        if not isinstance(df_birds, pd.DataFrame) or df_birds.empty:
+            print("Error: Invalid or empty DataFrame provided for 'df_birds'.")
+            return None
+
+        required_cols = [status_col, iucn_col, name_col]
+        if not all(col in df_birds.columns for col in required_cols):
+            missing = [col for col in required_cols if col not in df_birds.columns]
+            print(f"Error: Missing columns in 'df_birds': {missing}")
+            return None
+
+        # --- Data Preparation ---
+        df_processed = df_birds.copy()
+        df_processed[status_col] = df_processed[status_col].fillna('Unknown_Status')
+        df_processed[iucn_col] = df_processed[iucn_col].fillna('Unknown_IUCN')
+
+        birds_entact = df_processed[df_processed[status_col] == 'Intact']
+        birds_degraded = df_processed[df_processed[status_col] == 'Degraded']
+
+        if birds_entact.empty and birds_degraded.empty:
+             print("Error: No data found for 'Intact' or 'Degraded' status.")
+             return None
+
+        # --- Data Aggregation ---
+        entact_counts = birds_entact.groupby(iucn_col)[name_col].nunique()
+        degraded_counts = birds_degraded.groupby(iucn_col)[name_col].nunique()
+
+        categories = ['Least Concern', 'Near Threatened', 'Vulnerable', 'Endangered', 'Critically Endangered', 'Unknown_IUCN']
+        present_categories_entact = entact_counts.index.unique().tolist()
+        present_categories_degraded = degraded_counts.index.unique().tolist()
+        all_present_categories = sorted(list(set(present_categories_entact + present_categories_degraded)),
+                                        key=lambda x: categories.index(x) if x in categories else 99)
+
+        entact_counts_values = [entact_counts.get(cat, 0) for cat in all_present_categories]
+        degraded_counts_values = [degraded_counts.get(cat, 0) for cat in all_present_categories]
+
+        # --- Sankey Configuration ---
+        display_categories = [cat.replace('Unknown_IUCN', 'Unknown') for cat in all_present_categories]
+        original_labels = ['Intact', 'Degraded'] + display_categories
+        plot_labels = [""] * len(original_labels)
+        label_indices = {label: i for i, label in enumerate(original_labels)}
+
+        original_source_indices = [label_indices['Intact']] * len(all_present_categories) + \
+                                  [label_indices['Degraded']] * len(all_present_categories)
+        original_target_indices = [label_indices[cat] for cat in display_categories] * 2
+        values = entact_counts_values + degraded_counts_values
+
+        # --- Define Node Colors ---
+        node_color_map = {
+            'Intact': '#358600',
+            'Degraded': '#C08552',
+            'Least Concern': '#60C659',
+            'Near Threatened': '#CCE226',
+            'Vulnerable': '#F9E814',
+            'Endangered': '#FC7F3F',
+            'Critically Endangered': '#D81E05',
+            'Unknown': '#CCCCCC'
+        }
+        node_colors = [node_color_map.get(label, '#888888') for label in original_labels]
+
+        # --- Define Link Colors based on NEW source (IUCN category) ---
+        def to_rgba(color, alpha=0.4):
+            if color.startswith('#'):
+                rgb = hex_to_rgb(color)
+                return f'rgba({rgb[0]}, {rgb[1]}, {rgb[2]}, {alpha})'
+            return f'rgba(128, 128, 128, {alpha})'
+
+        reversed_link_colors_map = {
+            cat: to_rgba(node_color_map.get(cat, '#CCCCCC')) for cat in display_categories
+        }
+        reversed_link_colors = [reversed_link_colors_map.get(original_labels[idx], to_rgba('#CCCCCC')) for idx in original_target_indices]
+
+        # --- Filter out zero-value links ---
+        non_zero_indices = [i for i, v in enumerate(values) if v > 0]
+        final_source_indices = [original_target_indices[i] for i in non_zero_indices]
+        final_target_indices = [original_source_indices[i] for i in non_zero_indices]
+        final_values = [values[i] for i in non_zero_indices]
+        final_link_colors = [reversed_link_colors[i] for i in non_zero_indices]
+
+        # --- Create Figure ---
+        fig = go.Figure()
+
+        # Add the Sankey trace
+        fig.add_trace(go.Sankey(
+            arrangement='snap',
+            node=dict(
+                pad=25,
+                thickness=5,
+                line=dict(color="black", width=0.3),
+                label=plot_labels,
+                color=node_colors,
+                hovertemplate='Node: %{label}<extra></extra>'
+            ),
+            link=dict(
+                source=final_source_indices,
+                target=final_target_indices,
+                value=final_values,
+                color=final_link_colors,
+                hovertemplate='From %{source.label} to %{target.label}:<br><b>%{value}</b> unique species<extra></extra>',
+                customdata=original_labels
+            )
+        ))
+
+        # --- Add Dummy Traces for IUCN Legend ---
+        present_iucn_for_legend = [cat for cat in categories if cat.replace('Unknown_IUCN', 'Unknown') in display_categories]
+
+        for category in present_iucn_for_legend:
+            display_name = category.replace('Unknown_IUCN', 'Unknown')
+            color = node_color_map.get(display_name, '#CCCCCC')
+            fig.add_trace(go.Scatter(
+                x=[None], y=[None], mode='markers',
+                marker=dict(color=color, size=10),
+                name=display_name,
+                showlegend=True
+            ))
+
+        # --- Update Layout ---
+        fig.update_layout(
+            title_text="<b>Distribution of Unique Bird Species from Conservation Status to Habitat</b>",
+            font=dict(
+                size=12,
+                color="black"
+            ),
+            height=800, # Keep height or adjust as needed
+            margin=dict(t=50, b=100, l=50, r=50), # Increase bottom margin for legend
+            showlegend=True,
+            legend=dict(
+                title_text='IUCN Status',
+                orientation="h",      # Horizontal legend
+                yanchor="bottom",
+                y=-0.10,              # Position below the plot area (adjust as needed)
+                xanchor="center",
+                x=0.5                 # Center horizontally
+            ),
+            xaxis=dict(
+                visible=False,
+                showgrid=False,
+                zeroline=False
+            ),
+            yaxis=dict(
+                visible=False,
+                showgrid=False,
+                zeroline=False
+            )
+        )
+
+
+        return fig
+
+    except Exception as e:
+        print(f"An error occurred while creating the reversed Sankey diagram: {e}")
+        # import traceback
+        # print(traceback.format_exc())
+        return None
+
+# ... (rest of the file) ...

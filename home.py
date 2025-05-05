@@ -1,4 +1,4 @@
-# creating the streamlit frontend for the visualizations plus dashboard
+# creating the streamlit frontend for the visualizations 
 
 import streamlit as st
 from src.data_graphs import (create_tree_height_violin, 
@@ -9,7 +9,9 @@ from src.data_graphs import (create_tree_height_violin,
                              create_bird_conservation_plot,
                              create_tree_mass_comparison,
                              create_plotly_waffle_chart,
-                             create_bird_arrival_duration_plot
+                             create_bird_arrival_duration_plot,
+                             create_sankey_diagram,
+                             create_sankey_diagram_reversed,
 
 )
 
@@ -176,6 +178,42 @@ with container:
 
         # Display the plot
         st.pyplot(fig)
+
+        # To save the plot to an HTML file that can be opened in a browser
+        # fig.write_html("tree_height_comparison.html")
+    st.markdown("---")
+
+     # Graph 9
+    st.markdown("### Polar map of Bird sightings")
+
+    col1, col2, col3 = st.columns([1, 3, 1])
+    with col2:
+        # Placeholder for Graph 1
+        
+        
+        # Create the violin plot
+        fig =  create_sankey_diagram(df_birds)
+
+        # Display the plot
+        st.plotly_chart(fig, use_container_width=True)
+
+        # To save the plot to an HTML file that can be opened in a browser
+        # fig.write_html("tree_height_comparison.html")
+    st.markdown("---")
+
+       # Graph 10
+    st.markdown("### Polar map of Bird sightings")
+
+    col1, col2, col3 = st.columns([1, 3, 1])
+    with col2:
+        # Placeholder for Graph 1
+        
+        
+        # Create the violin plot
+        fig =  create_sankey_diagram_reversed(df_birds)
+
+        # Display the plot
+        st.plotly_chart(fig, use_container_width=True)
 
         # To save the plot to an HTML file that can be opened in a browser
         # fig.write_html("tree_height_comparison.html")
