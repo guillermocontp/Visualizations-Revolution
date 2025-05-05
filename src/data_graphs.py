@@ -1489,3 +1489,61 @@ def create_bird_arrival_duration_plot(df_birds):
 #         print("Error: birds_entact.csv not found.")
 #     except Exception as main_e:
 #         print(f"An error occurred during example usage: {main_e}")
+
+
+#Sankey Diagram Code
+import pandas as pd
+import plotly.graph_objects as go
+
+#You need to change the dataframe names
+entact_counts = birds_entact.groupby('IUCN_Status')['Common_Name'].nunique 
+degraded_counts = birds_degraded.groupby('IUCN_Status')['Common_Name'].nunique()
+
+categories = ['Least Concern', 'Near Threatened', 'Vulnerable', 'Endangered', 'Critically Endangered']
+
+entact_counts_values = [entact_counts.loc[i] if i in entact_counts.index else 0 for i in categories]
+degraded_counts_values = [degraded_counts.loc[i] if i in degraded_counts.index else 0 for i in categories]
+
+labels = ['Intact', 'Degraded'] + categories
+
+source = ['Intact'] * len(categories) + ['Degraded'] * len(categories)
+target = categories * 2
+values = entact_counts_values + degraded_counts_values
+
+node_colors = [
+    '#358600',  # Entact
+    '#C08552',  # Degraded 
+    '#60C659',  # Least Concern 
+    '#CCE226',  # Near Threatened
+    '#F9E814',  # Vulnerable
+    '#FC7F3F',  # Endangered
+    '#D81E05'  # Critically Endangered 
+]
+
+
+link_colors = ['rgba(81, 210, 187, 0.7)'] * len(categories) + ['rgba(199, 242, 150, 0.7)'] * len(categories)
+
+
+fig = go.Figure(go.Sankey(
+    node=dict(
+        pad=5,
+        thickness=50,
+        line=dict(color="black", width=0.5),
+        label=labels,
+        color=node_colors
+    ),
+    link=dict(
+        source=[labels.index(i) for i in source],
+        target=[labels.index(i) for i in target],
+        value=values,
+        color=link_colors
+    )
+))
+
+fig.update_layout(
+    title_text="Sankey Diagram: Bird Species Flow between Intact & Degraded Habitats",
+    font_size=12,
+    width=1000,
+    height=600   
+)
+# the right side doesnt list in order(from least concern to critically endangered), but I dont know how to fix it
