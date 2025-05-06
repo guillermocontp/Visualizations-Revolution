@@ -85,7 +85,7 @@ def create_tree_height_violin(df, height_col='Height_m', status_col='Status',
         y=height_col,
         x=status_col,
         color=status_col,
-        points="all",  # Show all points
+        
         color_discrete_map=colors,
         
         labels={height_col: "Height (m)", status_col: "Forest Condition"},
@@ -98,14 +98,14 @@ def create_tree_height_violin(df, height_col='Height_m', status_col='Status',
         
         
         title=dict(
-            text='<b>Tree Height Comparison:</b> Trees in <span style="color:brown;">degraded</span> areas are smaller in average</b>',
+            text='<b>Trees in <span style="color:#C08552;">degraded</span> areas are smaller in average</b>',
             font=dict(size=24), # Increased font size
             x=0.5, # Center the title
             xanchor='center',
             y=0.95, # Adjust vertical position if needed
             yanchor='top'
         ),          
-        legend_title="<b>Forest Condition</b>",
+        showlegend=False,
         yaxis_title="<b>Height (meters)</b>",
         xaxis_title="<b>Forest Condition</b>",
         violingap=0.2,  # Gap between violins
@@ -114,15 +114,6 @@ def create_tree_height_violin(df, height_col='Height_m', status_col='Status',
     )
     
           
-    
-    # Add a subtle note about environmental impact
-    fig.add_annotation(
-        text="Trees in degraded areas show reduced height, indicating decreased forest health and carbon storage capacity.",
-        x=0.5, y=-1,
-        xref="paper", yref="paper",
-        showarrow=False,
-        font=dict(size=13, color="darkgray")
-    )
             
     return fig
 
@@ -200,7 +191,7 @@ def create_tree_height_histogram(df, height_col='Height_m', status_col='Status',
             'y': 0.95,
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 24, 'color': '#333333'}
+            'font': {'size': 24, 'color': 'white'}
         },
         xaxis_title={
             'text': "<b>Tree Height (meters)</b>",
@@ -763,14 +754,14 @@ def create_bird_conservation_plot(df, iucn_col='IUCN_Status', status_col='Status
             'y': 0.95,
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 24, 'color': '#333333'}
+            'font': {'size': 24, 'color': 'white'}
         },
         xaxis={
             'title': "<b>Percentage of Bird Sightings (%)</b>",
             
             'tickfont': {'size': 14},
             'range': [0, 100],
-            'gridcolor': 'rgba(220, 220, 220, 0.8)',
+            'gridcolor': 'rgba(0, 0, 0, 0)',
         },
         yaxis={
             'title': "<b>IUCN Conservation Status</b>",
@@ -781,9 +772,9 @@ def create_bird_conservation_plot(df, iucn_col='IUCN_Status', status_col='Status
         },
         barmode='stack',
         
-        margin=dict(l=20, r=20, t=80, b=20),
+        margin=dict(l=10, r=20, t=80, b=20),
         height=600,
-        plot_bgcolor='rgba(245, 245, 245, 0.8)',
+        plot_bgcolor='rgba(0, 0, 0, 0)',
         
         hoverlabel=dict(
             bgcolor="white",
@@ -1185,7 +1176,7 @@ def create_plotly_waffle_chart(birds_df):
             mode='markers',
             marker=dict(
                 color=colors,
-                size=48, # Adjust size as needed
+                size=52, # Adjust size as needed
                 symbol='square',
                 line=dict(width=0.1, color='white') # Grid lines via marker outline
             ),
@@ -1196,7 +1187,7 @@ def create_plotly_waffle_chart(birds_df):
         # --- Configure Layout ---
         fig.update_layout(
             title=dict(
-                text='<b>The Cost of Degradation: Bird Populations Show <span style="color:#D2B48C;"> Only 30% Activity in Degraded Areas</span></b>',
+                text='<b>Bird Populations Show <span style="color:#D2B48C;"> Only 30% Activity in Degraded Areas</span></b>',
                 font=dict(size=20),
                 y=0.95,
                 x=0.5,
@@ -1217,10 +1208,10 @@ def create_plotly_waffle_chart(birds_df):
                 scaleanchor="x", # Make squares square
                 scaleratio=1
             ),
-            width=600, # Adjust figure size
+            width=700, # Adjust figure size
             height=700,
-            plot_bgcolor='white',
-            margin=dict(t=100, b=100, l=50, r=50), # Adjust margins for title/legend
+            plot_bgcolor='black',
+            margin=dict(t=75, b=75, l=60, r=60), # Adjust margins for title/legend
             # Add border
             xaxis_showline=False, yaxis_showline=False,
             
@@ -1483,148 +1474,12 @@ def create_bird_arrival_duration_plot(df_birds):
 
 
 
-# the right side doesnt list in order(from least concern to critically endangered), but I dont know how to fix it
 
 
 
-# ... (previous functions) ...
-
-# Sankey Diagram Code
-import pandas as pd
-import plotly.graph_objects as go
-
-# ... (imports and other functions) ...
-
-def create_sankey_diagram(df_birds, status_col='Status', iucn_col='IUCN_Status', name_col='Common_Name'):
-    """
-    Creates a Sankey diagram showing the flow of unique bird species counts
-    from Intact/Degraded status to IUCN conservation categories, using a single DataFrame.
-
-    Args:
-        df_birds (pd.DataFrame): DataFrame containing bird data with Status, IUCN, and species name columns.
-        status_col (str): Column name for habitat status (e.g., 'Intact', 'Degraded'). Defaults to 'Status'.
-        iucn_col (str): Column name for IUCN status. Defaults to 'IUCN_Status'.
-        name_col (str): Column name for the bird species identifier (e.g., Common_Name). Defaults to 'Common_Name'.
-
-    Returns:
-        plotly.graph_objects.Figure: The Plotly figure object containing the Sankey diagram,
-                                     or None if an error occurs.
-    """
-    try:
-        # --- Input Validation ---
-        if not isinstance(df_birds, pd.DataFrame) or df_birds.empty:
-            print("Error: Invalid or empty DataFrame provided for 'df_birds'.")
-            return None
-
-        required_cols = [status_col, iucn_col, name_col]
-        if not all(col in df_birds.columns for col in required_cols):
-            missing = [col for col in required_cols if col not in df_birds.columns]
-            print(f"Error: Missing columns in 'df_birds': {missing}")
-            return None
-
-        # --- Data Preparation ---
-        # Work on a copy
-        df_processed = df_birds.copy()
-
-        # Fill NA in relevant columns
-        df_processed[status_col] = df_processed[status_col].fillna('Unknown_Status')
-        df_processed[iucn_col] = df_processed[iucn_col].fillna('Unknown_IUCN')
-
-        # Filter for 'Intact' and 'Degraded' statuses
-        birds_entact = df_processed[df_processed[status_col] == 'Intact']
-        birds_degraded = df_processed[df_processed[status_col] == 'Degraded']
-
-        if birds_entact.empty and birds_degraded.empty:
-             print("Error: No data found for 'Intact' or 'Degraded' status.")
-             return None
-
-        # --- Data Aggregation ---
-        entact_counts = birds_entact.groupby(iucn_col)[name_col].nunique()
-        degraded_counts = birds_degraded.groupby(iucn_col)[name_col].nunique()
-
-        # Define the order of IUCN categories
-        categories = ['Least Concern', 'Near Threatened', 'Vulnerable', 'Endangered', 'Critically Endangered', 'Unknown_IUCN']
-        present_categories_entact = entact_counts.index.unique().tolist()
-        present_categories_degraded = degraded_counts.index.unique().tolist()
-        all_present_categories = sorted(list(set(present_categories_entact + present_categories_degraded)),
-                                        key=lambda x: categories.index(x) if x in categories else 99)
-
-        entact_counts_values = [entact_counts.get(cat, 0) for cat in all_present_categories]
-        degraded_counts_values = [degraded_counts.get(cat, 0) for cat in all_present_categories]
-
-        # --- Sankey Configuration ---
-        display_categories = [cat.replace('Unknown_IUCN', 'Unknown') for cat in all_present_categories]
-        labels = ['Intact', 'Degraded'] + display_categories
-        # Make labels bold for Sankey node
-        bold_labels = [f"<b>{l}</b>" for l in labels]
-
-        label_indices = {label: i for i, label in enumerate(labels)}
-
-        source_indices = [label_indices['Intact']] * len(all_present_categories) + \
-                         [label_indices['Degraded']] * len(all_present_categories)
-        target_indices = [label_indices[cat] for cat in display_categories] * 2
-        values = entact_counts_values + degraded_counts_values
-
-        node_color_map = {
-            'Intact': '#358600',
-            'Degraded': '#C08552',
-            'Least Concern': '#60C659',
-            'Near Threatened': '#CCE226',
-            'Vulnerable': '#F9E814',
-            'Endangered': '#FC7F3F',
-            'Critically Endangered': '#D81E05',
-            'Unknown': '#CCCCCC'
-        }
-        node_colors = [node_color_map.get(label, '#888888') for label in labels]
-
-        link_colors_intact = 'rgba(53, 134, 0, 0.4)'
-        link_colors_degraded = 'rgba(192, 133, 82, 0.4)'
-        link_colors = [link_colors_intact] * len(all_present_categories) + \
-                      [link_colors_degraded] * len(all_present_categories)
-
-        non_zero_indices = [i for i, v in enumerate(values) if v > 0]
-        source_indices = [source_indices[i] for i in non_zero_indices]
-        target_indices = [target_indices[i] for i in non_zero_indices]
-        values = [values[i] for i in non_zero_indices]
-        link_colors = [link_colors[i] for i in non_zero_indices]
 
 
-        # --- Create Figure ---
-        fig = go.Figure(go.Sankey(
-            arrangement='snap',
-            node=dict(
-                pad=25,          # Increased padding further for vertical spacing
-                thickness=10,
-                line=dict(color="black", width=0.5),
-                label=bold_labels, # Use bold labels here
-                color=node_colors,
-                # Explicitly set label font color inside node if needed, though layout font should cover it
-                # label_font=dict(color="black", size=12)
-            ),
-            link=dict(
-                source=source_indices,
-                target=target_indices,
-                value=values,
-                color=link_colors,
-                hovertemplate='From %{source.label} to %{target.label}:<br><b>%{value}</b> unique species<extra></extra>'
-            )
-        ))
 
-        fig.update_layout(
-            title_text="<b>Distribution of Unique Bird Species by Conservation Status</b>",
-            font=dict( # Set default font properties for the layout
-                size=12,
-                color="black" # Set default text color to black
-            ),
-            height=800, # Increased height for more vertical length
-            margin=dict(t=50, b=50, l=50, r=50) # Adjust margins if needed
-        )
-
-        return fig
-
-    except Exception as e:
-        print(f"An error occurred while creating the Sankey diagram: {e}")
-        return None
 
 
 from plotly.colors import hex_to_rgb
@@ -1777,7 +1632,7 @@ def create_sankey_diagram_reversed(df_birds, status_col='Status', iucn_col='IUCN
                 title_text='IUCN Status',
                 orientation="h",      # Horizontal legend
                 yanchor="bottom",
-                y=-0.10,              # Position below the plot area (adjust as needed)
+                y=-0.20,              # Position below the plot area (adjust as needed)
                 xanchor="center",
                 x=0.5                 # Center horizontally
             ),
