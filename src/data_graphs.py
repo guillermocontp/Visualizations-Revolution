@@ -386,7 +386,7 @@ def create_bird_activity_heatmap(df, date_col='Date', time_col='Time_Stamp',
 
 def create_bird_activity_polar(df, date_col='Date', time_col='Time_Stamp', 
                              title='Bird Activity:  <span style="color:#FF3C8E;">The dawn chorus</span> and  <span style="color:#FF3C8E;">The evening chorus</span>',
-                             colorscale=None):
+                             colorscale=None, time_filter=None):
     """
     Create an interactive polar chart showing bird activity by day of week and hour.
     
@@ -402,6 +402,8 @@ def create_bird_activity_polar(df, date_col='Date', time_col='Time_Stamp',
         Title for the plot
     colorscale : list
         List of colors for the intensity scale (default is yellow to purple)
+    time_filter : str
+        Optional filter for time of day: 'morning' (1-12) or 'evening' (13-24)
         
     Returns:
     --------
@@ -479,9 +481,31 @@ def create_bird_activity_polar(df, date_col='Date', time_col='Time_Stamp',
         print("No valid data after processing dates and times")
         return None
     
+    # Apply time filtering if specified
+    filtered_title = title
+    if time_filter == 'morning':
+        data = data[(data['Hour'] >= 1) & (data['Hour'] <= 12)]
+        filtered_title = 'Morning Bird Activity: <span style="color:#FF3C8E;">The dawn chorus</span> (1:00-12:00)'
+        if len(data) == 0:
+            print("No data available for morning hours (1-12)")
+            return None
+    elif time_filter == 'evening':
+        data = data[(data['Hour'] >= 13) & (data['Hour'] <= 24)]
+        filtered_title = 'Evening Bird Activity: <span style="color:#FF3C8E;">The evening chorus</span> (13:00-24:00)'
+        if len(data) == 0:
+            print("No data available for evening hours (13-24)")
+            return None
+    
     # Define days of week and hour ranges
     days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    hours = list(range(24))
+    
+    # Define hour ranges based on filtering
+    if time_filter == 'morning':
+        hours = list(range(1, 13))  # 1-12
+    elif time_filter == 'evening':
+        hours = list(range(13, 25))  # 13-24
+    else:
+        hours = list(range(24))  # 0-23
     
     # Count sightings by day and hour
     activity_counts = data.groupby(['Day_of_Week', 'Hour']).size().reset_index(name='Count')
@@ -510,9 +534,20 @@ def create_bird_activity_polar(df, date_col='Date', time_col='Time_Stamp',
     df_polar['r1'] = df_polar['day'].map(day_to_radius)
     df_polar['r2'] = df_polar['r1'] + 1
     
-    # Map hours to angles (0=midnight, starting at top, clockwise)
-    hour_to_angle_start = {hour: hour * 15 for hour in hours}
-    hour_to_angle_end = {hour: (hour + 1) * 15 for hour in hours}
+    # Adjust the hour-to-angle mapping based on filtering
+    if time_filter == 'morning':
+        # Map hours 1-12 to 0-360 degrees
+        hour_to_angle_start = {hour: (hour-1) * 30 for hour in hours}  # 30 degrees per hour
+        hour_to_angle_end = {hour: hour * 30 for hour in hours}
+    elif time_filter == 'evening':
+        # Map hours 13-24 to 0-360 degrees
+        hour_to_angle_start = {hour: (hour-13) * 30 for hour in hours}  # 30 degrees per hour
+        hour_to_angle_end = {hour: (hour-12) * 30 for hour in hours}
+    else:
+        # Original mapping: 24 hours to 360 degrees (15 degrees per hour)
+        hour_to_angle_start = {hour: hour * 15 for hour in hours}
+        hour_to_angle_end = {hour: (hour + 1) * 15 for hour in hours}
+    
     df_polar['theta_start'] = df_polar['hour'].map(hour_to_angle_start)
     df_polar['theta_end'] = df_polar['hour'].map(hour_to_angle_end)
     
@@ -561,49 +596,57 @@ def create_bird_activity_polar(df, date_col='Date', time_col='Time_Stamp',
             text=hover_text
         ))
     
+    # Adjust tick labels based on the time filter
+    if time_filter == 'morning':
+        tick_vals = [(i - 0.5) * 30 for i in range(1, 13)]  # 12 ticks for morning hours
+        tick_text = [f"{i:02d}:00" for i in range(1, 13)]
+    elif time_filter == 'evening':
+        tick_vals = [(i - 0.5) * 30 for i in range(1, 13)]  # 12 ticks for evening hours
+        tick_text = [f"{i+12:02d}:00" for i in range(1, 13)]
+    else:
+        tick_vals = [(i + 0.5) * 15 for i in range(24)]  # 24 ticks for all hours
+        tick_text = [f"{i:02d}:00" for i in range(24)]
+    
     fig.update_layout(
-    # ... (your existing polar dict here) ...
-    polar=dict(
-         radialaxis=dict(
-             visible=False,
-             showticklabels=False,
-             showgrid=False,
-             showline=False
-         ),
-         angularaxis=dict(
-             tickvals=[(i + 0.5) * 15 for i in range(24)],
-             ticktext=[f"{i:02d}:00" for i in range(24)],
-             direction="clockwise",
-             period=360,
-             rotation=90,
-             showgrid=False, # Keep False
-             showline=False, # Keep False
-             visible=True    # Keep True to show tick labels (hours)
-         )
-    ),
-    # --- Add these lines ---
-    xaxis=dict(
-        visible=False,
-        showgrid=False,
-        zeroline=False
-    ),
-    yaxis=dict(
-        visible=False,
-        showgrid=False,
-        zeroline=False
-    ),
-    # --- End of added lines ---
-    title={
-            'text': f"<b>{title}</b>",
+        polar=dict(
+            radialaxis=dict(
+                visible=False,
+                showticklabels=False,
+                showgrid=False,
+                showline=False
+            ),
+            angularaxis=dict(
+                tickvals=tick_vals,
+                ticktext=tick_text,
+                direction="clockwise",
+                period=360,
+                rotation=90,
+                showgrid=False,
+                showline=False,
+                visible=True
+            )
+        ),
+        xaxis=dict(
+            visible=False,
+            showgrid=False,
+            zeroline=False
+        ),
+        yaxis=dict(
+            visible=False,
+            showgrid=False,
+            zeroline=False
+        ),
+        title={
+            'text': f"<b>{filtered_title}</b>",
             'y': 0.97,
             'x': 0.5,
             'xanchor': 'center',
             'font': {'size': 24, 'color': '#333333'}
         },
-    showlegend=False,
-    template="plotly_white", # Or try template=None
-    margin=dict(t=100, b=50, l=50, r=50)
-)
+        showlegend=False,
+        template="plotly_white",
+        margin=dict(t=100, b=50, l=50, r=50)
+    )
     
     # Add colorbar to show intensity scale
     z = np.linspace(0, 1, 100)
@@ -621,13 +664,10 @@ def create_bird_activity_polar(df, date_col='Date', time_col='Time_Stamp',
             cmax=max_count,
             colorbar=dict(
                 title="Bird Sightings"
-                
             )
         ),
         hoverinfo='none'
     ))
-    
-    
     
     return fig
 

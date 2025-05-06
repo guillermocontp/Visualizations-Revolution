@@ -10,7 +10,7 @@ from src.data_graphs import (create_tree_height_violin,
                              create_tree_volume_comparison,
                              create_plotly_waffle_chart,
                              create_bird_arrival_duration_plot,
-                             create_sankey_diagram,
+                             
                              create_sankey_diagram_reversed,
 
 )
@@ -270,10 +270,10 @@ with bird_container:
     col1, col2, col3 = st.columns([2, 2.5, 2])
     with col2:
         # Create the sankey diagram
-        fig = create_plotly_waffle_chart(df_birds)
+        fig_waffle = create_plotly_waffle_chart(df_birds)
 
         # Display the plot
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig_waffle, use_container_width=True)
 
 
        
@@ -307,10 +307,10 @@ with bird_container2:
         st.markdown("<div style='margin-top: 100px;'></div>", unsafe_allow_html=True)
         
         # Create the sankey diagram
-        fig = create_bird_conservation_plot(df_birds)
+        fig_stacked = create_bird_conservation_plot(df_birds)
 
         # Display the plot
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig_stacked, use_container_width=True)
 
         # To save the plot to an HTML file that can be opened in a browser
         # fig.write_html("tree_height_comparison.html")
@@ -322,8 +322,18 @@ with bird_container3:
     col1, col2, col3 = st.columns([2, 4, 2])
     with col2:
 
-        fig = create_sankey_diagram_reversed(df_birds)
-        st.plotly_chart(fig, use_container_width=True)
+        fig_sankey = create_sankey_diagram_reversed(df_birds)
+        st.plotly_chart(fig_sankey, use_container_width=True)
+
+
+
+        fig_heatmap = create_bird_activity_heatmap(df_birds)
+        st.plotly_chart(fig_heatmap, use_container_width=True)
+
+        fig_polar = create_bird_activity_polar(df_birds, time_filter='morning')
+        st.plotly_chart(fig_polar, use_container_width=True)
+
+
 
 
 
