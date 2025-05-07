@@ -560,11 +560,21 @@ def create_bird_activity_polar(df, date_col='Date', time_col='Time_Stamp',
     
     # Define a colorscale (yellow to purple)
     if colorscale is None:
-        colorscale = [
-            '#FFFF99', '#FFED6F', '#FFE14D', '#FFD52C', '#FFC914', '#FFBA10', 
-            '#FF9D32', '#FF7E4D', '#FF5E68', '#FF3C8E', '#F033C3', '#C340E0',
-            '#9D51F3', '#6872FE', '#00A6FF', '#00CCFF'
-        ]
+        if time_filter == 'evening':
+            # Blue colorscale for evening
+            colorscale = [
+                   '#61A1FF', 
+    '#408CFF', '#2575F7', '#1F5DD0',  '#152D83', 
+    '#10155C', '#24004A', '#3D0055', '#56005F', 
+    '#7A0071', '#A3008A'
+            ]
+        else:
+            # Default yellow to purple colorscale for morning or no filter
+            colorscale = [
+                '#FFFF99', '#FFED6F', '#FFE14D', '#FFD52C', '#FFC914', '#FFBA10', 
+                '#FF9D32', '#FF7E4D', '#FF5E68', '#FF3C8E', '#F033C3', '#C340E0',
+                '#9D51F3', '#6872FE', '#00A6FF', '#00CCFF'
+            ]
     
     # Function to map normalized count to the colorscale
     def get_color(normalized_value, colors):
@@ -1089,14 +1099,14 @@ def create_tree_volume_comparison(df, common_name_col='Common_Name', height_col=
                 'x': 0.5,
                 'xanchor': 'center',
                 'yanchor': 'top',
-                'font': {'size': 24, 'color': '#333333', 'family': 'Arial, sans-serif'}
+                'font': {'size': 24, 'color': 'white', 'family': 'open sans, sans-serif'}
             },
             margin=dict(t=90, l=10, r=10, b=50), # Increased bottom margin for annotation
             height=700,
             font=dict(
-                family="Arial, sans-serif",
+                family="open sans, sans-serif",
                 size=13,
-                color="#333333"
+                color="white"
             ),
             
             

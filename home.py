@@ -48,7 +48,7 @@ st.markdown("""
             line-height: 1.2 !important;
             margin-bottom: 10px !important;
             display: block !important;
-            text-align: left !important;
+            text-align: center !important;
         }
         
         /* Paragraph text styles */
@@ -90,14 +90,7 @@ with intro_container:
         st.image('forest_aerial.jpg', 
                     use_container_width=True)
 
-st.markdown("""
-                    
-                    
-                    """)
-st.markdown("""
-                    
-                    
-                    """)
+st.markdown("<div style='margin-top: 100px;'></div>", unsafe_allow_html=True)
 
 paragraph_container = st.container(border=None)  
 with paragraph_container:
@@ -118,22 +111,13 @@ with paragraph_container:
         
         
         """, unsafe_allow_html=True)
-st.markdown("""
-             
-            """)
-st.markdown("""
-            
-            """)
-st.markdown("""
-        
-        """)
-st.markdown("""
-        
-        """)
-st.markdown("""
-        
-        """)
-            
+        st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)   
+        st.markdown("""
+        <p class='paragraph'>Through metric analysis, we identify and measure the ecological footprint of human activities by comparing the current state of a <span class='highlight-text-brown'>degraded forest area</span> with a <span class='highlight-text-green'> intact reference zone. </span>
+        </p>
+        """, unsafe_allow_html=True)
+
+         
 
 
 # Load the data
@@ -152,51 +136,18 @@ st.markdown('<div class="fullwidth-container">', unsafe_allow_html=True)
 with jungle_container:
      # Full-width container starts   
     
-    col1, col2, col3, col4, col5 = st.columns([2, 3, .5, 3, 2])
+    col1, col2, col3, col4, col5 = st.columns([2, 3, .1, 3, 2])
     with col2:
-        st.markdown("""
         
-        """)
-        st.markdown("""
-
-        """)
-        st.markdown("""
-        
-        """)
-        st.markdown("""
-        
-        """)
-        st.markdown("""
-        
-        """)
-        st.markdown("""
-        
-        """)
-        st.markdown("""
-        
-        """)
-        
-        st.markdown("""
-        <p class='paragraph'>Through metric analysis, we identify and measure the ecological footprint of human activities by comparing the current state of a <span class='highlight-text-brown'>degraded forest area</span> with a <span class='highlight-text-green'> intact reference zone. </span>
-        </p>
-        """, unsafe_allow_html=True)
-        st.markdown("""
-        
-        """)
-        st.markdown("""
-        
-        """)
-        st.markdown("""
-        <p class='paragraph'>Firstly we will dive into the diversity of tree species and its characteristics. What can we tell about a <span class='highlight-text-brown'>degraded area?  </span>
-        </p>
-        """, unsafe_allow_html=True)
+        st.image('forest_degraded.jpg', 
+                 use_container_width=True,caption="Our example uses data from a site in Brazil, which is measuring an area of the Atlantic forest") 
         
     with col4:
         
         st.image('atlantic_forest_view.jpg', 
-                 use_container_width=True, caption="Our example uses data from a site in Brazil, which is measuring an area of the Atlantic forest")
+                 use_container_width=True, caption="Through different metrics, we can better understand and track the complexity of the forest in order to improve restoration efforts")
 st.markdown('</div>', unsafe_allow_html=True)        
-    # Close full-width container
+st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
     
 # Create a container for your two-column layout
 tree_container = st.container(border=None)
@@ -204,57 +155,59 @@ tree_container = st.container(border=None)
 with tree_container:
     col1, col2, col3 = st.columns([2, 2.5, 2])
     with col2:
-        st.markdown("""
-        <p class='paragraph-header'>Impact of Degradation on Forest Vertical Structure: <span><i>A Look at Tree Heights</i></span></p>
-        <p class='paragraph'>This graph, known as a violin plot, offers a deep look into the height structure of trees</p>
-        
-        <p class='paragraph'>What you're seeing:</p>
-        <ul class='paragraph'>
-            <li>The width of each violin at any given height indicates the density or concentration of trees at that specific height</li>
-            <li>Notice the distinct shapes. The violin for the intact area typically extends higher and often shows a broader distribution at taller heights, signifying a healthier canopy with a greater presence of mature, tall trees.</li>
-            
-        </ul>
-        
-        
-        """, unsafe_allow_html=True)
-    
+                  
 
-    
-    
-    # First graph - takes full width of col2
-        
-        
-        # Create the first plot
-        fig1 = create_tree_height_violin(df_trees)
-        
-        # Display the first plot
-        st.plotly_chart(fig1, use_container_width=True)
-        
-        # Small spacing between graphs
-        st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
-        
-        st.markdown("""
-        
-        <p class='paragraph'>A histogram provides another perspective on the tree height distribution, complementing the violin plot by showing the frequency of trees within specific height classes for both the <span class='highlight-text-green'><span><i>intact</i></span></span> and <span class='highlight-text-brown'><span><i>degraded</i></span></span> areas.</p>
-        <p class='paragraph'>For the <span class='highlight-text-green'><span><i>intact</i></span></span> area, we observe a more robust representation in the taller height classes, indicating that more species are present. In contrast, the distribution for the <span class='highlight-text-brown'><span><i>degraded</i></span></span> area is skewed towards shorter height classes or younger trees that were planted in the reforstation effort</p>                
-        
-        """, unsafe_allow_html=True)
-        
-        
-        # Create the second plot
-        fig2 = create_tree_height_histogram(df_trees)
-        
-        # Display the second plot
-        st.plotly_chart(fig2, use_container_width=True)
-
-        st.markdown("""
+           st.markdown("""
         <p class='paragraph-header'>Overal distribution of trees in Volume by species</i></span></p>
                     """, unsafe_allow_html=True)
         # Create the violin plot
-        result = create_tree_volume_comparison(df_trees)
+           result = create_tree_volume_comparison(df_trees)
 
         # Display the plot
-        st.plotly_chart(result['figure'], use_container_width=True)
+           st.plotly_chart(result['figure'], use_container_width=True)
+
+
+           st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
+
+           st.markdown("""
+            <p class='paragraph-header'>Impact of Degradation on Forest Vertical Structure: <span><i>A Look at Tree Heights</i></span></p>
+            <p class='paragraph'>This graph, known as a violin plot, offers a deep look into the height structure of trees</p>
+
+            <p class='paragraph'>What you're seeing:</p>
+            <ul class='paragraph'>
+                <li>The width of each violin at any given height indicates the density or concentration of trees at that specific height</li>
+                <li>Notice the distinct shapes. The violin for the intact area typically extends higher and often shows a broader distribution at taller heights, signifying a healthier canopy with a greater presence of mature, tall trees.</li>
+                
+            </ul>
+
+
+            """, unsafe_allow_html=True)
+
+
+            # Create the first plot
+           fig1 = create_tree_height_violin(df_trees)
+
+            # Display the first plot
+           st.plotly_chart(fig1, use_container_width=True)
+
+            # Small spacing between graphs
+           st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
+
+           st.markdown("""
+
+            <p class='paragraph'>A histogram provides another perspective on the tree height distribution, complementing the violin plot by showing the frequency of trees within specific height classes for both the <span class='highlight-text-green'><span><i>intact</i></span></span> and <span class='highlight-text-brown'><span><i>degraded</i></span></span> areas.</p>
+            <p class='paragraph'>For the <span class='highlight-text-green'><span><i>intact</i></span></span> area, we observe a more robust representation in the taller height classes, indicating that more species are present. In contrast, the distribution for the <span class='highlight-text-brown'><span><i>degraded</i></span></span> area is skewed towards shorter height classes or younger trees that were planted in the reforstation effort</p>                
+
+            """, unsafe_allow_html=True)
+
+
+            # Create the second plot
+           fig2 = create_tree_height_histogram(df_trees)
+
+            # Display the second plot
+           st.plotly_chart(fig2, use_container_width=True)
+
+     
 
 st.markdown("<div style='margin-top: 200px;'></div>", unsafe_allow_html=True)
 st.markdown("""
@@ -303,7 +256,7 @@ with bird_container2:
     with col4:   
         
         st.image('bird_listening.png', 
-                 use_container_width=True, caption="Our example uses data from a site in Brazil, which is measuring an area of the Atlantic forest")
+                 use_container_width=True)
         st.markdown("<div style='margin-top: 100px;'></div>", unsafe_allow_html=True)
         
         # Create the sankey diagram
@@ -329,9 +282,37 @@ with bird_container3:
 
         fig_heatmap = create_bird_activity_heatmap(df_birds)
         st.plotly_chart(fig_heatmap, use_container_width=True)
+st.markdown("<div style='margin-top: 300px;'></div>", unsafe_allow_html=True)
+      
 
-        fig_polar = create_bird_activity_polar(df_birds, time_filter='morning')
-        st.plotly_chart(fig_polar, use_container_width=True)
+
+bird_container4 = st.container(border=None)
+with bird_container4:
+
+    col1, col2, col3, col4, col5 = st.columns([1, 4, 1, 3, 1])
+    with col2:
+
+        fig_polar_morning = create_bird_activity_polar(df_birds, time_filter='morning')
+        st.plotly_chart(fig_polar_morning, use_container_width=True)
+
+        st.markdown("<div style='margin-top: 100px;'></div>", unsafe_allow_html=True)
+        
+        fig_polar_evening = create_bird_activity_polar(df_birds, time_filter='evening')
+        st.plotly_chart(fig_polar_evening, use_container_width=True)
+
+
+
+    with col4:   
+        
+        st.image('forest_dawn.jpg', 
+                 use_container_width=True)
+        st.markdown("<div style='margin-top: 100px;'></div>", unsafe_allow_html=True)
+
+        st.image('forest_sunset.jpg', 
+                 use_container_width=True)
+        st.markdown("<div style='margin-top: 100px;'></div>", unsafe_allow_html=True)
+
+
 
 
 
