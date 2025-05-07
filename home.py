@@ -18,10 +18,11 @@ from src.data_graphs import (create_tree_height_violin,
 # Set page configuration for a wider layout
 st.set_page_config(
     page_title="Tracking biodiversity",
-    page_icon="🌴🦜🌳",
+    page_icon="🌳",
     layout="wide",  
-    initial_sidebar_state="collapsed"
-)
+    initial_sidebar_state="collapsed",)
+
+
 
 # Create title and subtitle
 # Create a single CSS block at the beginning of your app
@@ -71,8 +72,7 @@ st.markdown("""
             color: #C08552 !important; 
             font-weight: bold !important;
         }
-                 
-        
+              
         
     </style>
 """, unsafe_allow_html=True)
@@ -85,7 +85,7 @@ intro_container = st.container(border=None)
 with intro_container:
     col1, col2, col3 = st.columns([2, 3, 2])
     with col2:
-        st.markdown("<p class='infographic-header'>Tracking biodiversity: Understanding its importance for <span class='highlight-text-green'>restoration and research</span></p>", unsafe_allow_html=True)
+        st.markdown("<p class='infographic-header'>Forest Health Report: Understanding Biodiversity's Role in<span class='highlight-text-green'>Restoration and Research</span></p>", unsafe_allow_html=True)
 
         st.image('forest_aerial.jpg', 
                     use_container_width=True)
@@ -98,14 +98,14 @@ with paragraph_container:
     with col2:
                     
         st.markdown("""
-        <p class='paragraph-header'>Digital reality: Taking biodiversity monitoring to the next level</p>
-        <p class='paragraph'>R-evolution has developed the Green Cubes Nature Methodology, a science-based, peer-reviewed approach to forest monitoring. </p>
+        <p class='paragraph-header'>Advanced Monitoring: A Deeper Insight into Nature's Complexity</p>
+        <p class='paragraph'>How can we accurately assess a forest's condition, or measure the success of efforts to restore a damaged area? It requires more than observation alone. We employ scientific tools and methodologies (like the Green Cubes Nature Methodology developed by R-evolution) to obtain a comprehensive understanding.</p>
         
-        <p class='paragraph'>The data collected can help:
+        <p class='paragraph'>This data provides a detailed "health report" for the forest, enabling us to:
         <ul class='paragraph'>
-        <li>More accurate monitoring for reforest efforts</li>
-        <li>Correlation between tree species and animal activity</li>
-        <li>Comparison between areas that have been damaged (degraded) and intact areas</li>
+        <li>Effectively monitor if reforestation efforts are leading to genuine ecosystem recovery</li>
+        <li>Investigate correlations between tree species composition and the presence of animal activity.</li>
+        <li>Clearly compare areas impacted by human activity ("degraded") with untouched, healthy ("intact") forest sections.</li>
         </ul>
         </p>
         
@@ -113,7 +113,7 @@ with paragraph_container:
         """, unsafe_allow_html=True)
         st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)   
         st.markdown("""
-        <p class='paragraph'>Through metric analysis, we identify and measure the ecological footprint of human activities by comparing the current state of a <span class='highlight-text-brown'>degraded forest area</span> with a <span class='highlight-text-green'> intact reference zone. </span>
+        <p class='paragraph'>By analyzing an area of forest that has been disturbed <span class='highlight-text-brown'>degraded </span> alongside a nearby healthy <span class='highlight-text-green'> intact </span>zone, we can measure the ecological effects of human activity. 
         </p>
         """, unsafe_allow_html=True)
 
@@ -158,7 +158,7 @@ with tree_container:
                   
 
            st.markdown("""
-        <p class='paragraph-header'>Overal distribution of trees in Volume by species</i></span></p>
+        <p class='infographic-header'>First, Let's Look at Tree Composition: What Species Are Present and How Abundant Are They?</i></span></p>
                     """, unsafe_allow_html=True)
         # Create the violin plot
            result = create_tree_volume_comparison(df_trees)
@@ -170,7 +170,9 @@ with tree_container:
            st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
 
            st.markdown("""
-            <p class='paragraph-header'>Impact of Degradation on Forest Vertical Structure: <span><i>A Look at Tree Heights</i></span></p>
+            <p class='paragraph-header'>Next: Assessing Forest Height – Are We Seeing Mature Canopies or Younger Growth?
+            
+
             <p class='paragraph'>This graph, known as a violin plot, offers a deep look into the height structure of trees</p>
 
             <p class='paragraph'>What you're seeing:</p>
@@ -274,6 +276,7 @@ bird_container3 = st.container(border=None)
 with bird_container3:
     col1, col2, col3 = st.columns([2, 4, 2])
     with col2:
+        
 
         fig_sankey = create_sankey_diagram_reversed(df_birds)
         st.plotly_chart(fig_sankey, use_container_width=True)
@@ -282,37 +285,52 @@ with bird_container3:
 
         fig_heatmap = create_bird_activity_heatmap(df_birds)
         st.plotly_chart(fig_heatmap, use_container_width=True)
-st.markdown("<div style='margin-top: 300px;'></div>", unsafe_allow_html=True)
-      
+        
+st.markdown("<div style='margin-top: 200px;'></div>", unsafe_allow_html=True)
 
 
 bird_container4 = st.container(border=None)
 with bird_container4:
 
-    col1, col2, col3, col4, col5 = st.columns([1, 4, 1, 3, 1])
+    col1, col2, col3, col4, col5 = st.columns([1, 4, 0.5, 4, 1])
     with col2:
 
-        fig_polar_morning = create_bird_activity_polar(df_birds, time_filter='morning')
-        st.plotly_chart(fig_polar_morning, use_container_width=True)
-
+        st.image('dawn.jpg', 
+                 use_container_width=True)
         st.markdown("<div style='margin-top: 100px;'></div>", unsafe_allow_html=True)
-        
-        fig_polar_evening = create_bird_activity_polar(df_birds, time_filter='evening')
-        st.plotly_chart(fig_polar_evening, use_container_width=True)
 
+        
 
 
     with col4:   
         
-        st.image('forest_dawn.jpg', 
-                 use_container_width=True)
-        st.markdown("<div style='margin-top: 100px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
+        fig_polar_morning = create_bird_activity_polar(df_birds, time_filter='morning')
+        st.plotly_chart(fig_polar_morning, use_container_width=True)
+
+        
+        
+bird_container5 = st.container(border=None)
+with bird_container5:
+
+    col1, col2, col3, col4, col5 = st.columns([1, 4, 0.5, 4, 1])
+    with col2:
+
+       
 
         st.image('forest_sunset.jpg', 
                  use_container_width=True)
         st.markdown("<div style='margin-top: 100px;'></div>", unsafe_allow_html=True)
 
 
+    with col4:   
+        
+        
+
+        st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
+        
+        fig_polar_evening = create_bird_activity_polar(df_birds, time_filter='evening')
+        st.plotly_chart(fig_polar_evening, use_container_width=True)
 
 
 

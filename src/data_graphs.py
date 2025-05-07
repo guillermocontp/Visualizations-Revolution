@@ -1260,8 +1260,8 @@ def create_plotly_waffle_chart(birds_df):
             ),
             width=700, # Adjust figure size
             height=700,
-            plot_bgcolor='black',
-            margin=dict(t=75, b=75, l=60, r=60), # Adjust margins for title/legend
+            plot_bgcolor='white',
+            margin=dict(t=75, b=75, l=65, r=65), # Adjust margins for title/legend
             # Add border
             xaxis_showline=False, yaxis_showline=False,
             
@@ -1613,7 +1613,7 @@ def create_sankey_diagram_reversed(df_birds, status_col='Status', iucn_col='IUCN
         node_colors = [node_color_map.get(label, '#888888') for label in original_labels]
 
         # --- Define Link Colors based on NEW source (IUCN category) ---
-        def to_rgba(color, alpha=0.4):
+        def to_rgba(color, alpha=0.8):
             if color.startswith('#'):
                 rgb = hex_to_rgb(color)
                 return f'rgba({rgb[0]}, {rgb[1]}, {rgb[2]}, {alpha})'
@@ -1636,11 +1636,11 @@ def create_sankey_diagram_reversed(df_birds, status_col='Status', iucn_col='IUCN
 
         # Add the Sankey trace
         fig.add_trace(go.Sankey(
-            arrangement='snap',
+            arrangement='perpendicular',
             node=dict(
-                pad=25,
-                thickness=5,
-                line=dict(color="black", width=0.3),
+                pad=30,
+                thickness=10,
+                line=dict(color="white", width=1.5),
                 label=plot_labels,
                 color=node_colors,
                 hovertemplate='Node: %{label}<extra></extra>'
@@ -1673,16 +1673,17 @@ def create_sankey_diagram_reversed(df_birds, status_col='Status', iucn_col='IUCN
             title_text="<b>Distribution of Unique Bird Species from Conservation Status to Habitat</b>",
             font=dict(
                 size=12,
-                color="black"
+                color="white"
             ),
             height=800, # Keep height or adjust as needed
             margin=dict(t=50, b=100, l=50, r=50), # Increase bottom margin for legend
             showlegend=True,
+            plot_bgcolor='black',
             legend=dict(
                 title_text='IUCN Status',
                 orientation="h",      # Horizontal legend
                 yanchor="bottom",
-                y=-0.20,              # Position below the plot area (adjust as needed)
+                y=-0.10,              # Position below the plot area (adjust as needed)
                 xanchor="center",
                 x=0.5                 # Center horizontally
             ),
