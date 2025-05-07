@@ -200,6 +200,8 @@ with tree_container:
 
 
             """, unsafe_allow_html=True)
+           st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
+
 
           
             # Create the second plot
@@ -342,7 +344,7 @@ st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
 bird_container4 = st.container(border=None)
 with bird_container4:
 
-    col1, col2, col3, col4, col5 = st.columns([.5, 4, 0.5, 4.5, .5])
+    col1, col2, col3, col4, col5 = st.columns([2, 4, 0.1, 5.2, 2])
     with col2:
 
         st.image('dawn.jpg', 
@@ -355,11 +357,12 @@ with bird_container4:
         st.plotly_chart(fig_polar_morning, use_container_width=True)
 
         
-        
+st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
+
 bird_container5 = st.container(border=None)
 with bird_container5:
 
-    col1, col2, col3, col4, col5 = st.columns([.5, 4, 0.5, 4.5, .5])
+    col1, col2, col3, col4, col5 = st.columns([2, 4, 0.1, 5.2, 2])
     with col2:
 
         st.image('forest_sunset.jpg', 

@@ -1226,7 +1226,7 @@ def create_plotly_waffle_chart(birds_df):
             mode='markers',
             marker=dict(
                 color=colors,
-                size=46, # Adjust size as needed
+                size=55, # Adjust size as needed
                 symbol='square',
                 line=dict(width=0.1, color='white') # Grid lines via marker outline
             ),
@@ -1270,7 +1270,7 @@ def create_plotly_waffle_chart(birds_df):
         # Add custom legend-like annotations
         fig.add_annotation(
             xref="paper", yref="paper",
-            x=0.5, y=-0.1, # Position below the chart
+            x=0.5, y=-0.05, # Position below the chart
             showarrow=False,
             text=(f"<span style='color:forestgreen; font-size: 15px;'>■</span> Intact: {intact_total} sightings ({intact_proportion*100:.1f}%)   "
                   f"<span style='color:#D2B48C; font-size: 15px;'>■</span> Degraded: {degraded_total} sightings ({degraded_proportion*100:.1f}%)"),
