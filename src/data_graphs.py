@@ -98,7 +98,7 @@ def create_tree_height_violin(df, height_col='Height_m', status_col='Status',
         
         
         title=dict(
-            text='<b>Trees in <span style="color:#C08552;">degraded</span> areas are smaller in average</b>',
+            text='<b></b>',
             font=dict(size=24), # Increased font size
             x=0.5, # Center the title
             xanchor='center',
@@ -485,13 +485,13 @@ def create_bird_activity_polar(df, date_col='Date', time_col='Time_Stamp',
     filtered_title = title
     if time_filter == 'morning':
         data = data[(data['Hour'] >= 1) & (data['Hour'] <= 12)]
-        filtered_title = 'Morning Bird Activity: <span style="color:#FF3C8E;">The dawn chorus</span> (1:00-12:00)'
+        filtered_title = '<span style="color:#FF3C8E;">The dawn chorus</span>'
         if len(data) == 0:
             print("No data available for morning hours (1-12)")
             return None
     elif time_filter == 'evening':
         data = data[(data['Hour'] >= 13) & (data['Hour'] <= 24)]
-        filtered_title = 'Evening Bird Activity: <span style="color:#FF3C8E;">The evening chorus</span> (13:00-24:00)'
+        filtered_title = '<span style="color:#FF3C8E;">The evening chorus</span>'
         if len(data) == 0:
             print("No data available for evening hours (13-24)")
             return None
@@ -647,15 +647,15 @@ def create_bird_activity_polar(df, date_col='Date', time_col='Time_Stamp',
             zeroline=False
         ),
         title={
-            'text': f"<b>{filtered_title}</b>",
+            'text': f"<b></b>",
             'y': 0.97,
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 24, 'color': '#333333'}
+            'font': {'size': 30, 'color': '#333333'}
         },
         showlegend=False,
         template="plotly_white",
-        margin=dict(t=100, b=50, l=50, r=50)
+        margin=dict(t=100, b=50, l=50, r=60)
     )
     
     # Add colorbar to show intensity scale
@@ -683,7 +683,7 @@ def create_bird_activity_polar(df, date_col='Date', time_col='Time_Stamp',
 
 
 def create_bird_conservation_plot(df, iucn_col='IUCN_Status', status_col='Status', 
-                                 title='All vulnerable <span style="color:green;">species of birds</span> are only seen in <span style="color:green;">Intact areas</span>   ',
+                                 title='All <span style="color:#F9E814;">vulnerable</span> <span style="color:green;">species of birds</span> are only seen in <span style="color:green;">Intact areas</span>   ',
                                  colors=None):
     """
     Create an interactive stacked bar chart showing bird conservation status distribution
@@ -804,7 +804,7 @@ def create_bird_conservation_plot(df, iucn_col='IUCN_Status', status_col='Status
             'y': 0.95,
             'x': 0.5,
             'xanchor': 'center',
-            'font': {'size': 24, 'color': 'white'}
+            'font': {'size': 20, 'color': 'white'}
         },
         xaxis={
             'title': "<b>Percentage of Bird Sightings (%)</b>",
@@ -1226,7 +1226,7 @@ def create_plotly_waffle_chart(birds_df):
             mode='markers',
             marker=dict(
                 color=colors,
-                size=52, # Adjust size as needed
+                size=46, # Adjust size as needed
                 symbol='square',
                 line=dict(width=0.1, color='white') # Grid lines via marker outline
             ),
@@ -1260,8 +1260,8 @@ def create_plotly_waffle_chart(birds_df):
             ),
             width=700, # Adjust figure size
             height=700,
-            plot_bgcolor='white',
-            margin=dict(t=75, b=75, l=65, r=65), # Adjust margins for title/legend
+            plot_bgcolor='black',
+            margin=dict(t=60, b=60, l=60, r=60), # Adjust margins for title/legend
             # Add border
             xaxis_showline=False, yaxis_showline=False,
             
@@ -1638,8 +1638,8 @@ def create_sankey_diagram_reversed(df_birds, status_col='Status', iucn_col='IUCN
         fig.add_trace(go.Sankey(
             arrangement='perpendicular',
             node=dict(
-                pad=30,
-                thickness=10,
+                pad=35,
+                thickness=15,
                 line=dict(color="white", width=1.5),
                 label=plot_labels,
                 color=node_colors,
@@ -1670,7 +1670,13 @@ def create_sankey_diagram_reversed(df_birds, status_col='Status', iucn_col='IUCN
 
         # --- Update Layout ---
         fig.update_layout(
-            title_text="<b>Distribution of Unique Bird Species from Conservation Status to Habitat</b>",
+             title=dict(
+            text="<b><i>The flow of birds</i></b>",
+            font=dict(size=20, color="white"),
+            x=0.5,                 # Set this to 0.5 to center the title
+            xanchor="center",      # This ensures the title is centered
+            y=0.95                 # Adjust vertical position as needed
+        ),
             font=dict(
                 size=12,
                 color="white"
@@ -1680,10 +1686,10 @@ def create_sankey_diagram_reversed(df_birds, status_col='Status', iucn_col='IUCN
             showlegend=True,
             plot_bgcolor='black',
             legend=dict(
-                title_text='IUCN Status',
+                title_text='IUCN Status (left side)',
                 orientation="h",      # Horizontal legend
                 yanchor="bottom",
-                y=-0.10,              # Position below the plot area (adjust as needed)
+                y=-0.12,              # Position below the plot area (adjust as needed)
                 xanchor="center",
                 x=0.5                 # Center horizontally
             ),
