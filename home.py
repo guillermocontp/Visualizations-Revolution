@@ -340,43 +340,49 @@ with bird_container6:
         """, unsafe_allow_html=True)
 
 st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
+        # Create tabs at the container level (not inside a column)
+tab1, tab2 = st.tabs(["Heatmap View", "Polar Chart Views"])
 
-bird_container4 = st.container(border=None)
-with bird_container4:
+# Heatmap tab content with 3-column layout
+with tab1:
+    heatmap_col1, heatmap_col2, heatmap_col3 = st.columns([1.4, 3.5, 1.4])
+    with heatmap_col2:
+        fig_heatmap2 = create_bird_activity_heatmap(df_birds)
+        st.plotly_chart(fig_heatmap2, use_container_width=True)
+        st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
+        st.markdown("""
+        <p class='paragraph'>This heatmap shows bird activity throughout the day and week. 
+        Darker colors indicate higher activity levels, clearly showing the dawn and evening peaks.</p>
+        """, unsafe_allow_html=True)
 
-    col1, col2, col3, col4, col5 = st.columns([2, 4, 0.1, 5.2, 2])
-    with col2:
-
-        st.image('dawn.jpg', 
-                 use_container_width=True)
-
-
-    with col4:   
+# Polar charts tab content with 5-column layout
+with tab2:
+    # Morning polar chart
+    polar_col1, polar_col2, polar_col3, polar_col4, polar_col5 = st.columns([0.6, 3, 0.1, 3.5, 0.5])
+    
+    with polar_col2:
         
-        fig_polar_morning = create_bird_activity_polar(df_birds, time_filter='morning')
-        st.plotly_chart(fig_polar_morning, use_container_width=True)
-
+        st.image('dawn.jpg', use_container_width=True)
+    
+    with polar_col4:
+        fig_polar_morning2 = create_bird_activity_polar(df_birds, time_filter='morning')
+        st.plotly_chart(fig_polar_morning2, use_container_width=True)
+    
+    st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
+    
+    # Evening polar chart with new 5-column layout
+    evening_col1, evening_col2, evening_col3, evening_col4, evening_col5 = st.columns([0.6, 3, 0.1, 3.5, 0.5])
+    
+    with evening_col2:
         
-st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
+        st.image('forest_sunset.jpg', use_container_width=True)
+    
+    with evening_col4:
+        fig_polar_evening2 = create_bird_activity_polar(df_birds, time_filter='evening')
+        st.plotly_chart(fig_polar_evening2, use_container_width=True)
 
-bird_container5 = st.container(border=None)
-with bird_container5:
-
-    col1, col2, col3, col4, col5 = st.columns([2, 4, 0.1, 5.2, 2])
-    with col2:
-
-        st.image('forest_sunset.jpg', 
-                 use_container_width=True)
-
-    with col4:   
-        
-        fig_polar_evening = create_bird_activity_polar(df_birds, time_filter='evening')
-        st.plotly_chart(fig_polar_evening, use_container_width=True)
-
-
-st.markdown("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='margin-top: 100px;'></div>", unsafe_allow_html=True)
 bird_container7 = st.container(border=None)
-
 with bird_container7:
     col1, col2, col3 = st.columns([1.4, 3.5, 1.4])
     with col2:
@@ -387,8 +393,4 @@ with bird_container7:
         """, unsafe_allow_html=True)
 
 
-
- 
-
   
-

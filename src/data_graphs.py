@@ -351,7 +351,7 @@ def create_bird_activity_heatmap(df, date_col='Date', time_col='Time_Stamp',
     # Customize layout
     fig.update_layout(
         title={
-            'text': f"<b>{title}</b>",
+            'text': f"<b></b>",
             'y': 0.97,
             'x': 0.5,
             'xanchor': 'center',
@@ -1226,9 +1226,9 @@ def create_plotly_waffle_chart(birds_df):
             mode='markers',
             marker=dict(
                 color=colors,
-                size=55, # Adjust size as needed
+                size=48, # Adjust size as needed
                 symbol='square',
-                line=dict(width=0.1, color='white') # Grid lines via marker outline
+                line=dict(width=0., color='white') # Grid lines via marker outline
             ),
             
             showlegend=False # We will create a custom legend annotation
@@ -1261,7 +1261,7 @@ def create_plotly_waffle_chart(birds_df):
             width=700, # Adjust figure size
             height=700,
             plot_bgcolor='black',
-            margin=dict(t=60, b=60, l=60, r=60), # Adjust margins for title/legend
+            margin=dict(t=50, b=50, l=54, r=54), # Adjust margins for title/legend
             # Add border
             xaxis_showline=False, yaxis_showline=False,
             
