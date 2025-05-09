@@ -10,9 +10,7 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-df = pd.read_csv('birds_entact.csv')
 
-print(df.head())
 
 def load_tree_data(tree_file_path='Tree.xlsx', sheet_name='TreeI', header_row=0):
     """
