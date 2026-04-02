@@ -446,7 +446,7 @@ def create_bird_activity_polar(df, date_col='Date', time_col='Time_Stamp',
         try:
             # Handle different time formats
             if data[time_col].dtype == 'object':
-                # Try parsing as time strings first
+                # Try parsing as time strings first (HH:MM:SS format)
                 try:
                     data['Hour'] = pd.to_datetime(data[time_col], format='%H:%M:%S', errors='coerce').dt.hour
                     # Check if we got valid hours
@@ -471,10 +471,12 @@ def create_bird_activity_polar(df, date_col='Date', time_col='Time_Stamp',
             data['Hour'] = pd.to_numeric(data['Hour'], errors='coerce')
             data['Hour'] = data['Hour'].fillna(0).astype(int) % 24
             
-            # Debug: check if we have valid hours
-            if data['Hour'].max() == 0 and data['Hour'].min() == 0:
-                print(f"Warning: Hour extraction resulted in all zeros. Sample values: {data[time_col].head()}")
-                
+            # Remove rows where hour extraction failed (resulted in 0 from fillna)
+            # But only if ALL values are 0, which indicates complete failure
+            valid_hours = data['Hour'][(data['Hour'] > 0) | (data['Hour'] == 0)]
+            if len(valid_hours[valid_hours > 0]) == 0:
+                print(f"Warning: Hour extraction may have failed. Sample values: {data[time_col].head(10).tolist()}")
+                    
         except Exception as e:
             print(f"Error processing time data: {e}")
             return None
