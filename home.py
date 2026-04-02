@@ -92,7 +92,7 @@ st.markdown("""
 intro_container = st.container(border=None)
 
 with intro_container:
-    col1, col2, col3 = st.columns([1.4, 3.5, 1.4])
+    col1, col2, col3 = st.columns([1.2, 3.5, 1.2])
     with col2:
         st.markdown("<p class='infographic-header'>Forest Health Report: Understanding Biodiversity's Role in <span class='highlight-text-green'>Restoration and Research</span></p>", unsafe_allow_html=True)
 
@@ -103,7 +103,7 @@ st.markdown("<div style='margin-top: 100px;'></div>", unsafe_allow_html=True)
 
 paragraph_container = st.container(border=None)  
 with paragraph_container:
-    col1, col2, col3 = st.columns([1.4, 3.5, 1.4])
+    col1, col2, col3 = st.columns([1.2, 3.5, 1.2])
     with col2:
                     
         st.markdown("""
@@ -141,7 +141,7 @@ jungle_container = st.container(border=None)
 with jungle_container:
      # Full-width container starts   
     
-    col1, col2, col3, col4, col5 = st.columns([2, 3, .1, 3, 2])
+    col1, col2, col3, col4, col5 = st.columns([1.7, 3, .1, 3, 1.7])
     with col2:
         
         st.image('forest_degraded.jpg', 
@@ -158,7 +158,7 @@ st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
 tree_container = st.container(border=None)
 
 with tree_container:
-    col1, col2, col3 = st.columns([1.5, 3.5, 1.5])
+    col1, col2, col3 = st.columns([1.2, 3.5, 1.2])
     with col2:
                   
 
@@ -234,7 +234,7 @@ with tree_container:
 bird_container = st.container(border=None)
 
 with bird_container:
-    col1, col2, col3 = st.columns([1.4, 3.5, 1.4])
+    col1, col2, col3 = st.columns([1.2, 3.5, 1.2])
     with col2:
 
         st.markdown("""
@@ -312,7 +312,7 @@ with bird_container:
 bird_container2 = st.container(border=None)
 with bird_container2:
 
-    col1, col2, col3, col4, col5 = st.columns([0.5, 4, 0.2, 1.9, 0.5])
+    col1, col2, col3, col4, col5 = st.columns([0.4, 3.6, 0.1, 1.9, 0.4])
     with col2:
 
         st.image('bird_listening.png', 
@@ -345,7 +345,7 @@ tab1, tab2 = st.tabs(["Heatmap View", "Polar Chart Views"])
 
 # Heatmap tab content with 3-column layout
 with tab1:
-    heatmap_col1, heatmap_col2, heatmap_col3 = st.columns([1.4, 3.5, 1.4])
+    heatmap_col1, heatmap_col2, heatmap_col3 = st.columns([1.2, 3.5, 1.2])
     with heatmap_col2:
         fig_heatmap2 = create_bird_activity_heatmap(df_birds)
         st.plotly_chart(fig_heatmap2, use_container_width=True)
@@ -357,18 +357,29 @@ with tab1:
 
 # Polar charts tab content with 5-column layout
 with tab2:
+    # Debug the data before creating charts
+    st.write("### Debug Info")
+    st.write(f"df_birds shape: {df_birds.shape}")
+    st.write(f"df_birds columns: {df_birds.columns.tolist()}")
+    st.write(f"Date column dtype: {df_birds['Date'].dtype}")
+    st.write(f"Time_Stamp column dtype: {df_birds['Time_Stamp'].dtype}")
+    st.write(f"Null values in Date: {df_birds['Date'].isnull().sum()}")
+    st.write(f"Null values in Time_Stamp: {df_birds['Time_Stamp'].isnull().sum()}")
+    st.write("First few rows:")
+    st.write(df_birds[['Date', 'Time_Stamp']].head())
+    
     # Morning polar chart
     polar_col1, polar_col2, polar_col3, polar_col4, polar_col5 = st.columns([0.6, 3, 0.1, 3.5, 0.5])
     
     with polar_col2:
-        
         st.image('dawn.jpg', use_container_width=True)
     
     with polar_col4:
         fig_polar_morning2 = create_bird_activity_polar(df_birds, time_filter='morning')
-        st.plotly_chart(fig_polar_morning2, use_container_width=True)
-    
-    st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
+        if fig_polar_morning2 is not None:
+            st.plotly_chart(fig_polar_morning2, use_container_width=True)
+        else:
+            st.error("Failed to create morning polar chart")
     
     # Evening polar chart with new 5-column layout
     evening_col1, evening_col2, evening_col3, evening_col4, evening_col5 = st.columns([0.6, 3, 0.1, 3.5, 0.5])
