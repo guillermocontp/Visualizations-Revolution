@@ -356,35 +356,33 @@ with tab1:
         """, unsafe_allow_html=True)
 
 # Polar charts tab content with 5-column layout
+# Polar charts tab content with 5-column layout
 with tab2:
-    # Debug the data before creating charts
-    st.write("### Debug Info")
-    st.write(f"df_birds shape: {df_birds.shape}")
-    st.write(f"df_birds columns: {df_birds.columns.tolist()}")
-    st.write(f"Date column dtype: {df_birds['Date'].dtype}")
-    st.write(f"Time_Stamp column dtype: {df_birds['Time_Stamp'].dtype}")
-    st.write(f"Null values in Date: {df_birds['Date'].isnull().sum()}")
-    st.write(f"Null values in Time_Stamp: {df_birds['Time_Stamp'].isnull().sum()}")
-    st.write("First few rows:")
-    st.write(df_birds[['Date', 'Time_Stamp']].head(10))
+    # Morning polar chart
+    polar_col1, polar_col2, polar_col3, polar_col4, polar_col5 = st.columns([0.6, 3, 0.1, 3.5, 0.5])
     
-    # NEW DEBUG: Check actual Time_Stamp values and formats
-    st.write("### Time_Stamp Sample Values:")
-    st.write(df_birds['Time_Stamp'].head(20))
+    with polar_col2:
+        st.image('dawn.jpg', use_container_width=True)
     
-    st.write("### Date Sample Values:")
-    st.write(df_birds['Date'].head(20))
+    with polar_col4:
+        fig_polar_morning2 = create_bird_activity_polar(df_birds, time_filter='morning')
+        if fig_polar_morning2 is not None:
+            st.plotly_chart(fig_polar_morning2, use_container_width=True)
+        else:
+            st.error("Failed to create morning polar chart")
     
-    # NEW DEBUG: Try extracting hours and see what you get
-    st.write("### Testing Hour Extraction:")
-    test_df = df_birds.copy()
-    try:
-        test_df['Hour'] = pd.to_datetime(test_df['Time_Stamp'], format='%H:%M:%S', errors='coerce').dt.hour
-        st.write(f"Extracted hours (first 20): {test_df['Hour'].head(20).tolist()}")
-        st.write(f"Unique hours: {sorted(test_df['Hour'].dropna().unique().tolist())}")
-        st.write(f"Null values after hour extraction: {test_df['Hour'].isnull().sum()}")
-    except Exception as e:
-        st.error(f"Error extracting hours: {e}")
+    # Evening polar chart with new 5-column layout
+    evening_col1, evening_col2, evening_col3, evening_col4, evening_col5 = st.columns([0.6, 3, 0.1, 3.5, 0.5])
+    
+    with evening_col2:
+        st.image('forest_sunset.jpg', use_container_width=True)
+    
+    with evening_col4:
+        fig_polar_evening2 = create_bird_activity_polar(df_birds, time_filter='evening')
+        if fig_polar_evening2 is not None:
+            st.plotly_chart(fig_polar_evening2, use_container_width=True)
+        else:
+            st.error("Failed to create evening polar chart")
     
     # Morning polar chart
     polar_col1, polar_col2, polar_col3, polar_col4, polar_col5 = st.columns([0.6, 3, 0.1, 3.5, 0.5])

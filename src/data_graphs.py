@@ -441,13 +441,18 @@ def create_bird_activity_polar(df, date_col='Date', time_col='Time_Stamp',
         return None
     
     # Process the time column to extract hour
+    # Process the time column to extract hour
     if time_col in data.columns:
         try:
             # Handle different time formats
             if data[time_col].dtype == 'object':
-                # Try parsing as time strings
+                # Try parsing as time strings first
                 try:
                     data['Hour'] = pd.to_datetime(data[time_col], format='%H:%M:%S', errors='coerce').dt.hour
+                    # Check if we got valid hours
+                    if data['Hour'].isnull().all():
+                        # If all NaN, try other formats
+                        data['Hour'] = pd.to_datetime(data[time_col], errors='coerce').dt.hour
                 except:
                     # Try parsing as datetime strings
                     try:
@@ -465,12 +470,14 @@ def create_bird_activity_polar(df, date_col='Date', time_col='Time_Stamp',
             # Ensure hours are numeric and in the correct range
             data['Hour'] = pd.to_numeric(data['Hour'], errors='coerce')
             data['Hour'] = data['Hour'].fillna(0).astype(int) % 24
+            
+            # Debug: check if we have valid hours
+            if data['Hour'].max() == 0 and data['Hour'].min() == 0:
+                print(f"Warning: Hour extraction resulted in all zeros. Sample values: {data[time_col].head()}")
+                
         except Exception as e:
             print(f"Error processing time data: {e}")
             return None
-    else:
-        print(f"Time column '{time_col}' not found in the dataset")
-        return None
     
     # Remove any rows with missing processed data
     data = data.dropna(subset=['Day_of_Week', 'Hour'])
