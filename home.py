@@ -1,5 +1,5 @@
 # creating the streamlit frontend for the visualizations 
-
+import pandas as pd
 import streamlit as st
 from src.data_graphs import (create_tree_height_violin, 
                              load_tree_data,
